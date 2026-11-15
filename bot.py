@@ -12,6 +12,8 @@ from config import config, validate_config
 from storage import Storage
 from manager import HostedManager
 
+validate_config()
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
 log = logging.getLogger("flexible_vc")
 bot = Bot(config.bot_token)
