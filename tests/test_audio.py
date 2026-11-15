@@ -21,6 +21,26 @@ class AudioProcessorTests(unittest.TestCase):
         self.assertEqual(processor.update("bass", -999), -24.0)
         self.assertEqual(processor.update("echo", 999), 100.0)
 
+    def test_level_combines_all_effects_and_higher_values_are_stronger(self):
+        processor = AudioProcessor()
+        low = processor.update("level", 100)
+        profile_100 = dict(processor.settings)
+        high = processor.update("level", 1000)
+        profile_1000 = dict(processor.settings)
+        self.assertEqual(low, 100.0)
+        self.assertEqual(high, 1000.0)
+        for name in ("db", "gain", "bass", "treble", "echo", "distortion"):
+            self.assertGreater(profile_100[name], 0)
+            self.assertGreater(profile_1000[name], profile_100[name])
+
+    def test_level_accepts_large_finite_values_and_rejects_invalid_values(self):
+        processor = AudioProcessor()
+        self.assertEqual(processor.update("level", 1e100), 1e100)
+        with self.assertRaises(ValueError):
+            processor.update("level", -1)
+        with self.assertRaises(ValueError):
+            processor.update("level", float("inf"))
+
     def test_invalid_values_are_rejected(self):
         processor = AudioProcessor()
         with self.assertRaises(ValueError):
