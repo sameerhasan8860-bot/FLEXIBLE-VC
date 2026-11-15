@@ -229,7 +229,7 @@ async def custom_emoji_sticker_id(message: Message):
         ]
         if sticker.set_name:
             details.append(f"Pack: <code>{html.escape(sticker.set_name)}</code>")
-        await message.reply("\\n".join(details), parse_mode="HTML")
+        await message.reply("\n".join(details), parse_mode="HTML")
     else:
         await message.reply(
             "Ye regular sticker hai, custom emoji nahi. Emoji keyboard ke custom emoji pack se inline emoji select karke text ke saath bhejo.",
