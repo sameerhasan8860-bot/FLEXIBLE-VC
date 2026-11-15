@@ -28,6 +28,33 @@ def home_keyboard():
         [InlineKeyboardButton(text="✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒", callback_data="fx")],
     ])
 
+
+def category_keyboard(category):
+    commands = {
+        "help": [("👤 /host", "cmd:host"), ("🧹 /unhost", "cmd:unhost"), ("🔐 /privategroup", "cmd:privategroup"), ("🔗 /join", "cmd:join"), ("🛑 /leave", "cmd:leave")],
+        "eq": [("🎚️ /bass", "cmd:bass"), ("🎛️ /treble", "cmd:treble")],
+        "vol": [("🔊 /db", "cmd:db"), ("📈 /gain", "cmd:gain")],
+        "fx": [("🔁 /echo", "cmd:echo"), ("⚡ /distortion", "cmd:distortion")],
+    }
+    rows = [[InlineKeyboardButton(text=label, callback_data=data)] for label, data in commands.get(category, [])]
+    rows.append([InlineKeyboardButton(text="⬅️ 𝐇𝐎𝐌𝐄", callback_data="home")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+COMMAND_DETAILS = {
+    "host": ("👤 𝐇𝐎𝐒𝐓 𝐀𝐂𝐂𝐎𝐔𝐍𝐓", "/host", "Start your own Telegram account login flow in the private bot DM.", "Open bot DM and send /host, then follow phone, login-code and optional 2FA prompts."),
+    "unhost": ("🧹 𝐔𝐍𝐇𝐎𝐒𝐓", "/unhost", "Disconnect your hosted account and delete only your encrypted session and settings from MongoDB.", "Send /unhost in the private bot DM."),
+    "privategroup": ("🔐 𝐏𝐑𝐈𝐕𝐀𝐓𝐄𝐆𝐑𝐎𝐔𝐏", "/privategroup <group_id>", "Set the source group. Add this bot as an administrator in that group first.", "Example: /privategroup -1001234567890"),
+    "join": ("🔗 𝐉𝐎𝐈𝐍 𝐕𝐂", "/join <target_id> [source_id]", "Connect the hosted account to source and target voice chats. If source_id is omitted, the configured source is used.", "Examples: /join -1002222222222  OR  /join -1002222222222 -1001111111111"),
+    "leave": ("🛑 𝐋𝐄𝐀𝐕𝐄 𝐕𝐂", "/leave", "Leave both source and target voice chats.", "Example: /leave"),
+    "db": ("🔊 𝐃𝐁", "/db <value>", "Adjust output loudness in decibels. Positive values boost; negative values reduce.", "Example: /db 6  or  .db -3"),
+    "gain": ("📈 𝐆𝐀𝐈𝐍", "/gain <value>", "Set the linear output multiplier. 1 is normal gain; higher values increase amplitude.", "Example: /gain 1.5"),
+    "bass": ("🎚️ 𝐁𝐀𝐒𝐒", "/bass <value>", "Boost or reduce low-frequency energy in the relayed audio.", "Example: /bass 8"),
+    "treble": ("🎛️ 𝐓𝐑𝐄𝐁𝐋𝐄", "/treble <value>", "Boost or reduce high-frequency energy for a brighter or softer sound.", "Example: /treble 5"),
+    "echo": ("🔁 𝐄𝐂𝐇𝐎", "/echo <value>", "Add a short feedback echo. Set 0 to disable.", "Example: /echo 35"),
+    "distortion": ("⚡ 𝐃𝐈𝐒𝐓𝐎𝐑𝐓𝐈𝐎𝐍", "/distortion <value>", "Add soft saturation/distortion to the relayed audio.", "Example: /distortion 40"),
+}
+
 @dp.message(Command("start"))
 async def start(message: Message):
     await message.answer("╭━━〔 ✨ 𝐅𝐋𝐄𝐗𝐈𝐁𝐋𝐄 𝐕𝐂 〕━━╮\n  𝐋𝐢𝐯𝐞 𝐕𝐨𝐢𝐜𝐞 𝐂𝐡𝐚𝐭 𝐁𝐫𝐢𝐝𝐠𝐞\n╰━━━━━━━━━━━━━━━━━━╯\n\n🎧 Source VC ki mixed live audio target VC mein relay karo.\n\n👇 Start karne ke liye option select karo.", reply_markup=home_keyboard())
