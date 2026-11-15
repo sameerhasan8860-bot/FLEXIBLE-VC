@@ -67,7 +67,12 @@ async def unhost_cmd(message: Message):
     if message.chat.type != "private":
         await message.reply("/unhost sirf private bot DM mein use karo.")
         return
-    pending.pop(message.from_user.id, None)
+    pending_state = pending.pop(message.from_user.id, None)
+    if pending_state and pending_state.get("client"):
+        try:
+            await pending_state["client"].disconnect()
+        except Exception:
+            log.debug("Pending login client was already closed")
     await manager.unhost(message.from_user.id)
     await message.reply("🧹 𝐔𝐍𝐇𝐎𝐒𝐓 𝐂𝐎𝐌𝐏𝐋𝐄𝐓𝐄 — tumhara session aur MongoDB user data delete ho gaya.")
 
@@ -176,7 +181,12 @@ async def text_router(message: Message):
             await bot.send_message(uid, "✅ 𝐀𝐂𝐂𝐎𝐔𝐍𝐓 𝐇𝐎𝐒𝐓𝐄𝐃 — ab /privategroup ya /join use karo.")
         except Exception as exc:
             log.warning("Host flow failed for user %s: %s", uid, type(exc).__name__)
-            pending.pop(uid, None)
+            pending_state = pending.pop(uid, None)
+            if pending_state and pending_state.get("client"):
+                try:
+                    await pending_state["client"].disconnect()
+                except Exception:
+                    pass
             await bot.send_message(uid, "Login fail hua. /host se dobara start karo.")
         return
     match = re.match(r"^/(db|gain|bass|treble|echo|distortion)(?:\s+(.+))?$", message.text.strip(), re.I)
