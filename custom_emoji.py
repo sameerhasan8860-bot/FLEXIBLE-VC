@@ -18,22 +18,27 @@ def _replace_with_html(text):
     return "".join(parts)
 
 async def bot_send(method, text, *args, **kwargs):
-    original = text
-    converted = _replace_with_html(str(text))
-    if converted != original:
-        old_parse_mode = kwargs.pop("parse_mode", None)
-        try:
-            return await method(converted, *args, parse_mode="HTML", **kwargs)
-        except Exception as exc:
-            # Some bot identities/API configurations may reject custom emoji.
-            # Retry the original message, preserving existing HTML mode.
-            from aiogram.exceptions import TelegramBadRequest
-            if not isinstance(exc, TelegramBadRequest):
-                raise
-            if old_parse_mode is not None:
-                kwargs["parse_mode"] = old_parse_mode
-            return await method(original, *args, **kwargs)
-    return await method(original, *args, **kwargs)
+    original = str(text)
+    old_parse_mode = kwargs.pop("parse_mode", None)
+
+    # Preserve authored HTML only when the caller explicitly requested HTML.
+    # Plain command replies are escaped so placeholders like <group_id> cannot
+    # break Telegram's HTML parser.
+    body = original if old_parse_mode == "HTML" else html.escape(original)
+    converted_body = _replace_with_html(body)
+    prefix_id = random.choice(CUSTOM_EMOJI_IDS)
+    converted = f'<tg-emoji emoji-id="{prefix_id}">✨</tg-emoji> {converted_body}'
+
+    try:
+        return await method(converted, *args, parse_mode="HTML", **kwargs)
+    except Exception as exc:
+        # If Telegram rejects custom emoji, retain a normal emoji prefix.
+        from aiogram.exceptions import TelegramBadRequest
+        if not isinstance(exc, TelegramBadRequest):
+            raise
+        if old_parse_mode is not None:
+            kwargs["parse_mode"] = old_parse_mode
+        return await method("✨ " + original, *args, **kwargs)
 
 def telethon_entities(text, enabled):
     if not enabled:
