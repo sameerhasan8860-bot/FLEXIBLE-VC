@@ -216,6 +216,10 @@ class HostedManager:
 
     async def _reply_custom(self, event, text, owner_id):
         item = self.hosted.get(int(owner_id)) or {}
+        # Every dot-command response starts with a random-pool emoji.
+        # Premium hosted accounts render it as a custom animated emoji;
+        # non-Premium accounts keep the normal fallback emoji.
+        text = "✨ " + str(text)
         entities = telethon_entities(text, bool(item.get("premium")))
         await event.reply(text, formatting_entities=entities or None)
 
