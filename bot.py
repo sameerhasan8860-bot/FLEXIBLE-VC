@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import re
+import html
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
@@ -66,7 +67,7 @@ async def command_detail_button(q: CallbackQuery):
         await q.answer("Command detail not found", show_alert=True)
         return
     title, syntax, purpose, example = detail
-    text = title + "\n\n<b>Syntax:</b> <code>" + syntax + "</code>\n\n<b>Use:</b> " + purpose + "\n\n<b>Example:</b> <code>" + example + "</code>"
+    text = title + "\n\n<b>Syntax:</b> <code>" + html.escape(syntax) + "</code>\n\n<b>Use:</b> " + html.escape(purpose) + "\n\n<b>Example:</b> <code>" + html.escape(example) + "</code>"
     category = "help" if key in ("host", "unhost", "privategroup", "join", "leave", "dotjoin", "dotleave") else ("eq" if key in ("bass", "treble") else ("vol" if key in ("db", "gain") else "fx"))
     await q.message.edit_text(text, reply_markup=category_keyboard(category), parse_mode="HTML")
     await q.answer()
