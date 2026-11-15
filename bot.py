@@ -25,7 +25,7 @@ EFFECTS = {"db": "Volume in decibels", "gain": "Linear output gain", "bass": "Lo
 
 def home_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🪄 𝐇𝐎𝐒𝐓 𝐀𝐂𝐂𝐎𝐔𝐍𝐓", callback_data="host", style="success")],
+        [InlineKeyboardButton(text="𝐇𝐎𝐒𝐓 𝐀𝐂𝐂𝐎𝐔𝐍𝐓", callback_data="host", style="success", icon_custom_emoji_id="6328067014195684470")],
         [InlineKeyboardButton(text="📚 𝐇𝐄𝐋𝐏 & 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒", callback_data="help", style="primary")],
         [InlineKeyboardButton(text="🎚️ 𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑", callback_data="eq", style="primary"), InlineKeyboardButton(text="🔊 𝐕𝐎𝐋𝐔𝐌𝐄", callback_data="vol", style="success")],
         [InlineKeyboardButton(text="✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒", callback_data="fx", style="danger")],
