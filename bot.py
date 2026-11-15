@@ -99,7 +99,7 @@ async def host_button(q: CallbackQuery):
 @dp.callback_query(F.data.in_({"help", "eq", "vol", "fx"}))
 async def help_button(q: CallbackQuery):
     pages = {
-        "help": "📚 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒\n        "help": "📚 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒\n/emoji_pack — Hlo674 custom emoji IDs fetch\n/host — account host\n/unhost — apna session/data delete\n/privategroup <group_id> — source group set\n/join <target_id> — configured source se connect\n/join <target_id> <source_id> — direct connect\n/leave — both VCs se disconnect\n\nDot commands hosted account se kahin bhi chalti hain.",
+                "help": "📚 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒\n/emoji_pack <package> — fetch all custom emoji details\n/host — account host\n/unhost — apna session/data delete\n/privategroup <group_id> — source group set\n/join <target_id> — configured source se connect\n/join <target_id> <source_id> — direct connect\n/leave — both VCs se disconnect\n\nDot commands hosted account se kahin bhi chalti hain.",
         "eq": "🎚️ 𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑\n/bass <value> or .bass <value> — low frequencies adjust. Example: .bass 8\n/treble <value> or .treble <value> — high frequencies adjust. Example: .treble 5",
         "vol": "🔊 𝐕𝐎𝐋𝐔𝐌𝐄\n/db <value> or .db <value> — dB volume. Example: .db 6\n/gain <value> or .gain <value> — linear gain. Example: .gain 1.5\n/level <number> or .level <number> — combined master profile for all audio effects. Example: /level 100",
         "fx": "✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒\n/echo <value> or .echo <value> — echo amount. Example: .echo 35\n/distortion <value> or .distortion <value> — saturation. Example: .distortion 40",
@@ -116,48 +116,101 @@ async def begin_host(uid, message):
 
 @dp.message(Command("emoji_pack"))
 async def emoji_pack_cmd(message: Message):
-    """List custom emoji IDs from the public Hlo674 Telegram emoji pack."""
+    """Fetch every custom emoji and its metadata from a Telegram addemoji pack."""
     if message.chat.type != "private":
         await message.reply("🔒 /emoji_pack sirf private bot DM mein use karo.")
         return
 
-    await message.answer("🔎 Hlo674 emoji pack fetch kar raha hoon...")
+    parts = (message.text or "").strip().split(maxsplit=1)
+    if len(parts) != 2:
+        await message.reply(
+            "Usage: <code>/emoji_pack https://t.me/addemoji/Hlo674</code>\n"
+            "Pack ka addemoji link ya short name bhejo.",
+            parse_mode="HTML",
+        )
+        return
+
+    raw_pack = parts[1].strip()
+    match = re.fullmatch(
+        r"(?:https?://)?(?:www\.)?t\.me/addemoji/([A-Za-z0-9_]+)(?:/)?(?:\?.*)?|([A-Za-z][A-Za-z0-9_]{0,63})",
+        raw_pack,
+        re.IGNORECASE,
+    )
+    if not match:
+        await message.reply(
+            "⚠️ Invalid pack. Example: <code>/emoji_pack https://t.me/addemoji/Hlo674</code>",
+            parse_mode="HTML",
+        )
+        return
+
+    pack_name = match.group(1) or match.group(2)
+    status = await message.answer(f"🔎 <b>{html.escape(pack_name)}</b> pack fetch ho raha hai...", parse_mode="HTML")
     try:
-        sticker_set = await bot.get_sticker_set(name="Hlo674")
-        stickers = sticker_set.stickers or []
-        if not stickers:
-            await message.answer("⚠️ Hlo674 pack mein koi emoji nahi mila.")
+        sticker_set = await bot.get_sticker_set(name=pack_name)
+        all_stickers = sticker_set.stickers or []
+        custom_stickers = [
+            sticker for sticker in all_stickers
+            if getattr(sticker, "type", None) == "custom_emoji"
+            and getattr(sticker, "custom_emoji_id", None)
+        ]
+
+        if not custom_stickers:
+            await status.edit_text(
+                f"⚠️ <b>{html.escape(sticker_set.title or pack_name)}</b> mein koi Custom Emoji nahi mila. "
+                f"Pack type: <code>{html.escape(str(sticker_set.sticker_type))}</code>",
+                parse_mode="HTML",
+            )
             return
 
         lines = [
-            "🎨 <b>HLO674 — CUSTOM EMOJI IDs</b>",
-            f"Pack: <a href=\"https://t.me/addemoji/Hlo674\">Open emoji pack</a>",
-            f"Total: <b>{len(stickers)}</b>",
+            "🎨 <b>CUSTOM EMOJI PACK DETAILS</b>",
+            f"📦 Title: <b>{html.escape(sticker_set.title or pack_name)}</b>",
+            f"🔗 <a href=\"https://t.me/addemoji/{html.escape(pack_name)}\">Open pack</a>",
+            f"📊 Total stickers: <b>{len(all_stickers)}</b>",
+            f"✨ Custom emojis found: <b>{len(custom_stickers)}</b>",
+            f"🏷 Pack type: <code>{html.escape(str(sticker_set.sticker_type))}</code>",
             "",
         ]
-        for index, sticker in enumerate(stickers, start=1):
-            emoji = html.escape(sticker.emoji or "▫️")
-            custom_id = sticker.custom_emoji_id or "not available"
-            animation = "video" if sticker.is_video else ("animated" if sticker.is_animated else "static")
-            lines.append(
-                f"{index}. {emoji} | <code>{html.escape(str(custom_id))}</code> | {animation}"
-            )
 
-        # Telegram messages are limited to 4096 characters; send safe-sized pages.
+        for index, sticker in enumerate(custom_stickers, start=1):
+            emoji = html.escape(sticker.emoji or "▫️")
+            custom_id = html.escape(str(sticker.custom_emoji_id))
+            file_id = html.escape(str(sticker.file_id))
+            unique_id = html.escape(str(sticker.file_unique_id))
+            fmt = "VIDEO" if sticker.is_video else ("ANIMATED" if sticker.is_animated else "STATIC")
+            size = getattr(sticker, "file_size", None)
+            size_text = f"{size} bytes" if size is not None else "not provided"
+            repaint = "Yes" if getattr(sticker, "needs_repainting", False) else "No"
+            lines.extend([
+                f"<b>{index}. {emoji} — {fmt}</b>",
+                f"Custom Emoji ID: <code>{custom_id}</code>",
+                f"File ID: <code>{file_id}</code>",
+                f"Unique ID: <code>{unique_id}</code>",
+                f"Dimensions: <code>{sticker.width} × {sticker.height}</code>",
+                f"File size: <code>{size_text}</code> | Repainting: <code>{repaint}</code>",
+                "",
+            ])
+
+        pages = []
         page = ""
         for line in lines:
             candidate = f"{page}\n{line}" if page else line
             if len(candidate) > 3500 and page:
-                await message.answer(page, parse_mode="HTML", disable_web_page_preview=True)
+                pages.append(page)
                 page = line
             else:
                 page = candidate
         if page:
-            await message.answer(page, parse_mode="HTML", disable_web_page_preview=True)
+            pages.append(page)
+
+        await status.delete()
+        for page_text in pages:
+            await message.answer(page_text, parse_mode="HTML", disable_web_page_preview=True)
+
     except Exception as exc:
-        log.warning("Could not fetch Hlo674 emoji pack: %s", type(exc).__name__)
-        await message.answer(
-            "⚠️ Emoji pack fetch nahi hua. Pack name ya Telegram Bot API response check karo."
+        log.warning("Emoji pack lookup failed for %s: %s", pack_name, type(exc).__name__)
+        await status.edit_text(
+            "⚠️ Pack fetch nahi hua. Link/name check karo aur ensure karo ki pack public hai."
         )
 
 
