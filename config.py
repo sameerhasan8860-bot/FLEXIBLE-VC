@@ -10,7 +10,7 @@ load_dotenv()
 @dataclass(frozen=True)
 class Config:
     bot_token: str = os.getenv("BOT_TOKEN", "")
-    api_id: int = int(os.getenv("API_ID", "0"))
+    api_id: int = int(os.getenv("API_ID") or "0")
     api_hash: str = os.getenv("API_HASH", "")
     mongo_uri: str = os.getenv("MONGO_URI", "")
     db_name: str = os.getenv("DB_NAME") or "flexible_vc"
