@@ -218,6 +218,12 @@ async def leave_cmd(message: Message):
 async def text_router(message: Message):
     if not message.from_user or not message.text:
         return
+    # Reveal Telegram custom emoji IDs when the owner sends pack emojis in bot DM.
+    if message.chat.type == "private" and message.entities:
+        custom_ids = [entity.custom_emoji_id for entity in message.entities if entity.type == "custom_emoji" and entity.custom_emoji_id]
+        if custom_ids:
+            await message.reply("🎨 Custom emoji ID(s):\n" + "\n".join(f"<code>{html.escape(str(item))}</code>" for item in custom_ids), parse_mode="HTML")
+            return
     uid = message.from_user.id
     state = pending.get(uid) if message.chat.type == "private" else None
     if state:
