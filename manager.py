@@ -31,6 +31,21 @@ class HostedManager:
                     await client.disconnect()
                     continue
                 await self._register(row["user_id"], client, row)
+                if row.get("active") and row.get("source_group_id") and row.get("target_group_id"):
+                    try:
+                        await self.start_bridge(
+                            int(row["user_id"]),
+                            int(row["source_group_id"]),
+                            int(row["target_group_id"]),
+                        )
+                    except Exception:
+                        log.exception("Could not restore active bridge for %s", row["user_id"])
+                        await self.storage.save_user(
+                            int(row["user_id"]),
+                            active=False,
+                            source_group_id=None,
+                            target_group_id=None,
+                        )
             except Exception:
                 log.exception("Could not restore hosted user %s", row.get("user_id"))
 
@@ -78,8 +93,13 @@ class HostedManager:
             bridge = item["bridge"]
             if bridge.source_id == int(source_id) and bridge.target_id == int(target_id):
                 return
+            try:
+                target_entity = await item["client"].get_entity(bridge.target_id)
+                target_name = getattr(target_entity, "title", None) or str(bridge.target_id)
+            except Exception:
+                target_name = str(bridge.target_id)
             raise RuntimeError(
-                f"Already connected. Target: {bridge.target_id}. Pehle /leave karo."
+                f"Already connected. Current target: {target_name} ({bridge.target_id}). Pehle /leave karo."
             )
 
         # Check both voice chats before creating either connection. If a call
@@ -166,11 +186,19 @@ class HostedManager:
 
     async def unhost(self, owner_id: int):
         item = self.hosted.pop(int(owner_id), None)
-        if item:
-            if item.get("bridge"):
-                await item["bridge"].disconnect()
-            await item["client"].disconnect()
-        await self.storage.delete_user(owner_id)
+        try:
+            if item:
+                if item.get("bridge"):
+                    try:
+                        await item["bridge"].disconnect()
+                    except Exception:
+                        log.exception("Bridge cleanup failed during unhost for %s", owner_id)
+                try:
+                    await item["client"].disconnect()
+                except Exception:
+                    log.exception("Telegram client cleanup failed during unhost for %s", owner_id)
+        finally:
+            await self.storage.delete_user(owner_id)
 
     async def handle_dot_command(self, owner_id: int, event):
         import re
