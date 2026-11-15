@@ -31,7 +31,7 @@ def home_keyboard():
 
 def category_keyboard(category):
     commands = {
-        "help": [("👤 /host", "cmd:host"), ("🧹 /unhost", "cmd:unhost"), ("🔐 /privategroup", "cmd:privategroup"), ("🔗 /join", "cmd:join"), ("🛑 /leave", "cmd:leave")],
+        "help": [("👤 /host", "cmd:host"), ("🧹 /unhost", "cmd:unhost"), ("🔐 /privategroup", "cmd:privategroup"), ("🔗 /join", "cmd:join"), ("🛑 /leave", "cmd:leave"), ("⚡ .join", "cmd:dotjoin"), ("🚪 .leave", "cmd:dotleave")],
         "eq": [("🎚️ /bass", "cmd:bass"), ("🎛️ /treble", "cmd:treble")],
         "vol": [("🔊 /db", "cmd:db"), ("📈 /gain", "cmd:gain")],
         "fx": [("🔁 /echo", "cmd:echo"), ("⚡ /distortion", "cmd:distortion")],
@@ -47,6 +47,8 @@ COMMAND_DETAILS = {
     "privategroup": ("🔐 𝐏𝐑𝐈𝐕𝐀𝐓𝐄𝐆𝐑𝐎𝐔𝐏", "/privategroup <group_id>", "Set the source group. Add this bot as an administrator in that group first.", "Example: /privategroup -1001234567890"),
     "join": ("🔗 𝐉𝐎𝐈𝐍 𝐕𝐂", "/join <target_id> [source_id]", "Connect the hosted account to source and target voice chats. If source_id is omitted, the configured source is used.", "Examples: /join -1002222222222  OR  /join -1002222222222 -1001111111111"),
     "leave": ("🛑 𝐋𝐄𝐀𝐕𝐄 𝐕𝐂", "/leave", "Leave both source and target voice chats.", "Example: /leave"),
+    "dotjoin": ("⚡ 𝐃𝐎𝐓 𝐉𝐎𝐈𝐍", ".join", "In a group, the current group becomes the target. In a DM or Saved Messages, provide a target group ID. The source is your configured source group.", "Examples: send .join in the target group, or .join -1002222222222 in Saved Messages."),
+    "dotleave": ("🚪 𝐃𝐎𝐓 𝐋𝐄𝐀𝐕𝐄", ".leave", "The hosted Telegram account leaves both the source and target voice chats from any chat.", "Example: send .leave in any chat."),
     "db": ("🔊 𝐃𝐁", "/db <value>", "Adjust output loudness in decibels. Positive values boost; negative values reduce.", "Example: /db 6  or  .db -3"),
     "gain": ("📈 𝐆𝐀𝐈𝐍", "/gain <value>", "Set the linear output multiplier. 1 is normal gain; higher values increase amplitude.", "Example: /gain 1.5"),
     "bass": ("🎚️ 𝐁𝐀𝐒𝐒", "/bass <value>", "Boost or reduce low-frequency energy in the relayed audio.", "Example: /bass 8"),
@@ -64,7 +66,7 @@ async def command_detail_button(q: CallbackQuery):
         await q.answer("Command detail not found", show_alert=True)
         return
     title, syntax, purpose, example = detail
-    text = title + "\\n\\n<b>Syntax:</b> <code>" + syntax + "</code>\\n\\n<b>Use:</b> " + purpose + "\\n\\n<b>Example:</b> <code>" + example + "</code>"
+    text = title + "\n\n<b>Syntax:</b> <code>" + syntax + "</code>\n\n<b>Use:</b> " + purpose + "\n\n<b>Example:</b> <code>" + example + "</code>"
     category = "help" if key in ("host", "unhost", "privategroup", "join", "leave") else ("eq" if key in ("bass", "treble") else ("vol" if key in ("db", "gain") else "fx"))
     await q.message.edit_text(text, reply_markup=category_keyboard(category), parse_mode="HTML")
     await q.answer()
