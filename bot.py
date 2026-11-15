@@ -99,7 +99,7 @@ async def host_button(q: CallbackQuery):
 @dp.callback_query(F.data.in_({"help", "eq", "vol", "fx"}))
 async def help_button(q: CallbackQuery):
     pages = {
-        "help": "📚 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒\n/host — account host\n/unhost — apna session/data delete\n/privategroup <group_id> — source group set\n/join <target_id> — configured source se connect\n/join <target_id> <source_id> — direct connect\n/leave — both VCs se disconnect\n\nDot commands hosted account se kahin bhi chalti hain.",
+        "help": "📚 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒\n        "help": "📚 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒\n/emoji_pack — Hlo674 custom emoji IDs fetch\n/host — account host\n/unhost — apna session/data delete\n/privategroup <group_id> — source group set\n/join <target_id> — configured source se connect\n/join <target_id> <source_id> — direct connect\n/leave — both VCs se disconnect\n\nDot commands hosted account se kahin bhi chalti hain.",
         "eq": "🎚️ 𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑\n/bass <value> or .bass <value> — low frequencies adjust. Example: .bass 8\n/treble <value> or .treble <value> — high frequencies adjust. Example: .treble 5",
         "vol": "🔊 𝐕𝐎𝐋𝐔𝐌𝐄\n/db <value> or .db <value> — dB volume. Example: .db 6\n/gain <value> or .gain <value> — linear gain. Example: .gain 1.5\n/level <number> or .level <number> — combined master profile for all audio effects. Example: /level 100",
         "fx": "✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒\n/echo <value> or .echo <value> — echo amount. Example: .echo 35\n/distortion <value> or .distortion <value> — saturation. Example: .distortion 40",
@@ -113,6 +113,53 @@ async def begin_host(uid, message):
         return
     pending[uid] = {"stage": "phone"}
     await message.answer("🪄 Apna phone number international format mein bhejo. Example: +91XXXXXXXXXX\nSirf apna account host karo. OTP/2FA password share karne ke baad message delete kar diya jayega.")
+
+@dp.message(Command("emoji_pack"))
+async def emoji_pack_cmd(message: Message):
+    """List custom emoji IDs from the public Hlo674 Telegram emoji pack."""
+    if message.chat.type != "private":
+        await message.reply("🔒 /emoji_pack sirf private bot DM mein use karo.")
+        return
+
+    await message.answer("🔎 Hlo674 emoji pack fetch kar raha hoon...")
+    try:
+        sticker_set = await bot.get_sticker_set(name="Hlo674")
+        stickers = sticker_set.stickers or []
+        if not stickers:
+            await message.answer("⚠️ Hlo674 pack mein koi emoji nahi mila.")
+            return
+
+        lines = [
+            "🎨 <b>HLO674 — CUSTOM EMOJI IDs</b>",
+            f"Pack: <a href=\"https://t.me/addemoji/Hlo674\">Open emoji pack</a>",
+            f"Total: <b>{len(stickers)}</b>",
+            "",
+        ]
+        for index, sticker in enumerate(stickers, start=1):
+            emoji = html.escape(sticker.emoji or "▫️")
+            custom_id = sticker.custom_emoji_id or "not available"
+            animation = "video" if sticker.is_video else ("animated" if sticker.is_animated else "static")
+            lines.append(
+                f"{index}. {emoji} | <code>{html.escape(str(custom_id))}</code> | {animation}"
+            )
+
+        # Telegram messages are limited to 4096 characters; send safe-sized pages.
+        page = ""
+        for line in lines:
+            candidate = f"{page}\n{line}" if page else line
+            if len(candidate) > 3500 and page:
+                await message.answer(page, parse_mode="HTML", disable_web_page_preview=True)
+                page = line
+            else:
+                page = candidate
+        if page:
+            await message.answer(page, parse_mode="HTML", disable_web_page_preview=True)
+    except Exception as exc:
+        log.warning("Could not fetch Hlo674 emoji pack: %s", type(exc).__name__)
+        await message.answer(
+            "⚠️ Emoji pack fetch nahi hua. Pack name ya Telegram Bot API response check karo."
+        )
+
 
 @dp.message(Command("host"))
 async def host_cmd(message: Message):
