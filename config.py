@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 
 from dotenv import load_dotenv
+from cryptography.fernet import Fernet
 
 load_dotenv()
 
@@ -33,3 +34,7 @@ def validate_config() -> None:
             missing.append(key)
     if missing:
         raise RuntimeError("Missing required environment variables: " + ", ".join(missing))
+    try:
+        Fernet(config.session_encryption_key.encode())
+    except Exception as exc:
+        raise RuntimeError("SESSION_ENCRYPTION_KEY is invalid. Generate a Fernet key and save it as a GitHub secret.") from exc
