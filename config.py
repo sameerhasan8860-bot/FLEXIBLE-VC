@@ -12,7 +12,7 @@ class Config:
     api_id: int = int(os.getenv("API_ID", "0"))
     api_hash: str = os.getenv("API_HASH", "")
     mongo_uri: str = os.getenv("MONGO_URI", "")
-    db_name: str = os.getenv("DB_NAME", "flexible_vc")
+    db_name: str = os.getenv("DB_NAME") or "flexible_vc"
     session_encryption_key: str = os.getenv("SESSION_ENCRYPTION_KEY", "")
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
 
