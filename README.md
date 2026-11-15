@@ -12,7 +12,7 @@ A Telegram user-account voice-chat bridge bot. Each authorized user can host the
 - /leave disconnects the source and target calls.
 - Hosted-account dot-command handler for .join, .leave, and audio controls.
 - Incoming PyTgCalls frame capture and source-to-target forwarding.
-- Audio controls: dB, gain, bass, treble, echo, distortion.
+- Audio controls: dB, gain, bass, treble, echo, distortion, and combined `/level` master profile.
 - GitHub Actions workflow for Ubuntu 22.04.
 
 ## Important audio note
@@ -63,13 +63,15 @@ The workflow timeout is 350 minutes (5 hours 50 minutes), within the normal GitH
 - .join in a group — use that group as the target.
 - .join <target_group_id> — use an explicit target (useful in DM or Saved Messages).
 - .leave — leave both calls.
-- .db <value>, .gain <value>, .bass <value>, .treble <value>, .echo <value>, .distortion <value>.
+- .db <value>, .gain <value>, .bass <value>, .treble <value>, .echo <value>, .distortion <value>, .level <number>.
 
 Slash commands are handled by the bot in private DM and the configured privategroup. In a privategroup, only Telegram administrators can use them. Dot commands are handled by the hosted account.
 
-## Audio value limits
+## Master audio level
 
-Values accept arbitrary numeric input, but the DSP engine applies safe operating bounds to prevent clipping, runaway feedback, and unstable output. For example, dB is clamped to -60..+24, gain to 0..8, and EQ bands to -24..+24. “Unlimited” numeric entry cannot mean physically infinite amplification.
+`/level <number>` and `.level <number>` apply a combined profile across dB, gain, bass, treble, echo and distortion. Any finite non-negative numeric level is accepted; the profile grows logarithmically, so 1000 is stronger than 100 without allowing unbounded digital output. The PCM output stage remains bounded to prevent clipping and unsafe runaway levels. Individual effect commands remain available for manual adjustment after setting the master level.
+
+The individual DSP controls retain safe operating bounds: dB -60..+24, gain 0..8, EQ bands -24..+24, echo/distortion 0..100.
 
 ## Security
 
