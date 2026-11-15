@@ -200,9 +200,14 @@ class HostedManager:
                     except Exception:
                         log.exception("Bridge cleanup failed during unhost for %s", owner_id)
                 try:
-                    await item["client"].disconnect()
+                    # Revoke only this hosted Telegram authorization, then close its client.
+                    await item["client"].log_out()
                 except Exception:
-                    log.exception("Telegram client cleanup failed during unhost for %s", owner_id)
+                    log.exception("Telegram logout failed during unhost for %s", owner_id)
+                    try:
+                        await item["client"].disconnect()
+                    except Exception:
+                        log.exception("Telegram client disconnect failed for %s", owner_id)
         finally:
             await self.storage.delete_user(owner_id)
 
