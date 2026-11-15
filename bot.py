@@ -214,6 +214,28 @@ async def leave_cmd(message: Message):
     await manager.leave(owner)
     await message.reply("🛑 Source aur target dono VC se leave ho gaya.")
 
+@dp.message(F.sticker)
+async def custom_emoji_sticker_id(message: Message):
+    """Return the custom emoji ID for a custom-emoji sticker sent in DM."""
+    if message.chat.type != "private":
+        return
+    sticker = message.sticker
+    if sticker.type == "custom_emoji" and sticker.custom_emoji_id:
+        details = [
+            "🎨 <b>Custom emoji detected</b>",
+            f"ID: <code>{html.escape(str(sticker.custom_emoji_id))}</code>",
+            f"Animated: <code>{sticker.is_animated}</code>",
+            f"Video: <code>{sticker.is_video}</code>",
+        ]
+        if sticker.set_name:
+            details.append(f"Pack: <code>{html.escape(sticker.set_name)}</code>")
+        await message.reply("\\n".join(details), parse_mode="HTML")
+    else:
+        await message.reply(
+            "Ye regular sticker hai, custom emoji nahi. Emoji keyboard ke custom emoji pack se inline emoji select karke text ke saath bhejo.",
+        )
+
+
 @dp.message()
 async def text_router(message: Message):
     if not message.from_user or not message.text:
