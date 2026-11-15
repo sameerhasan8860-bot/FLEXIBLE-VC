@@ -51,6 +51,9 @@ class HostedManager:
 
     async def _register(self, user_id, client, row):
         me = await client.get_me()
+        # Prime Telethon's peer/access-hash cache so numeric -100... chat IDs
+        # supplied by commands can be resolved by the call engine.
+        await client.get_dialogs()
         item = {
             "client": client,
             "me": me,
