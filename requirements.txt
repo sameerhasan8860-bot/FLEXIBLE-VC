@@ -6,4 +6,4 @@ numpy>=1.26,<3
 python-dotenv>=1.0.1
 # Upstream PyTgCalls is pinned to its active source because the bridge
 # requires Direction.INCOMING StreamFrames and send_frame support.
-py-tgcalls[telethon] @ git+https://github.com/pytgcalls/pytgcalls.git
+py-tgcalls[telethon] @ git+https://github.com/pytgcalls/pytgcalls.git@8a4310a658af6426a09eb6cd33ef489550ed0d67
