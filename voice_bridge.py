@@ -11,30 +11,42 @@ AUDIO = AudioParameters(bitrate=48000, channels=2)
 
 
 class VoiceBridge:
+    """One persistent PyTgCalls engine for one hosted Telegram account."""
+
     def __init__(self, client, source_id: int, target_id: int, effects=None):
         self.client = client
         self.source_id = int(source_id)
         self.target_id = int(target_id)
         self.processor = AudioProcessor(effects)
         self.calls = PyTgCalls(client)
-        self.started = False
+        self.engine_started = False
+        self.connected = False
+
+    def configure(self, source_id: int, target_id: int, effects=None):
+        if self.connected:
+            raise RuntimeError("Leave the current bridge before changing groups.")
+        self.source_id = int(source_id)
+        self.target_id = int(target_id)
+        self.processor = AudioProcessor(effects)
 
     async def connect(self, source_auto_start=False, target_auto_start=False):
-        self.calls.start()
-        self.started = True
-        self.calls.on_update(
-            filters.stream_frame(Direction.INCOMING, Device.MICROPHONE)
-        )(self._on_audio)
+        if self.connected:
+            return
+        if not self.engine_started:
+            await self.calls.start()
+            self.calls.on_update(
+                filters.stream_frame(Direction.INCOMING, Device.MICROPHONE)
+            )(self._on_audio)
+            self.engine_started = True
 
         from pytgcalls.types import GroupCallConfig
 
         source_config = GroupCallConfig(auto_start=source_auto_start)
         target_config = GroupCallConfig(auto_start=target_auto_start)
-
+        self.connected = True
         try:
-            # The source call is joined as a listener and its incoming audio
-            # is recorded as PCM frames. The target call exposes a microphone
-            # input to receive the processed frames.
+            # Receive/mix the source VC's incoming audio frames. The target
+            # call exposes an outgoing external-audio microphone stream.
             await self.calls.play(
                 self.source_id,
                 MediaStream(ExternalMedia.AUDIO, AUDIO),
@@ -54,7 +66,7 @@ class VoiceBridge:
             raise
 
     async def _on_audio(self, _engine: PyTgCalls, update: StreamFrames):
-        if int(update.chat_id) != self.source_id or not update.frames:
+        if not self.connected or int(update.chat_id) != self.source_id or not update.frames:
             return
         try:
             arrays = [
@@ -83,11 +95,11 @@ class VoiceBridge:
         return self.processor.update(name, value)
 
     async def disconnect(self):
-        if not self.started:
+        if not self.connected:
             return
+        self.connected = False
         for chat_id in (self.source_id, self.target_id):
             try:
                 await self.calls.leave_call(chat_id)
             except Exception:
                 log.debug("Call %s was already disconnected", chat_id, exc_info=True)
-        self.started = False
