@@ -111,6 +111,19 @@ async def host_cmd(message: Message):
         return
     await begin_host(message.from_user.id, message)
 
+
+@dp.message(Command("cancel"))
+async def cancel_host(message: Message):
+    if message.chat.type != "private":
+        return
+    state = pending.pop(message.from_user.id, None)
+    if state and state.get("client"):
+        try:
+            await state["client"].disconnect()
+        except Exception:
+            pass
+    await message.reply("Login/hosting flow cancelled.")
+
 @dp.message(Command("unhost"))
 async def unhost_cmd(message: Message):
     if message.chat.type != "private":
