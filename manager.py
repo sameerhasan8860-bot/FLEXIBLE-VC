@@ -4,6 +4,7 @@ from telethon.sessions import StringSession
 from cryptography.fernet import Fernet
 from config import config
 from voice_bridge import VoiceBridge
+from custom_emoji import telethon_entities
 
 log = logging.getLogger("flexible_vc")
 
@@ -58,6 +59,7 @@ class HostedManager:
         except Exception:
             log.warning("Could not preload all dialogs for hosted account %s", user_id)
         item = {
+            "premium": bool(getattr(me, "premium", False)),
             "client": client,
             "me": me,
             "bridge": None,
@@ -211,6 +213,12 @@ class HostedManager:
         finally:
             await self.storage.delete_user(owner_id)
 
+
+    async def _reply_custom(self, event, text, owner_id):
+        item = self.hosted.get(int(owner_id)) or {}
+        entities = telethon_entities(text, bool(item.get("premium")))
+        await event.reply(text, formatting_entities=entities or None)
+
     async def handle_dot_command(self, owner_id: int, event):
         import re
         match = re.match(r"^\.(join|leave|level|db|gain|bass|treble|echo|distortion)(?:\s+(.+))?$", event.raw_text.strip(), re.I)
@@ -233,7 +241,7 @@ class HostedManager:
                 await event.reply(f"🔊 𝐕𝐂 𝐁𝐑𝐈𝐃𝐆𝐄 𝐀𝐂𝐓𝐈𝐕𝐄\nSource: {source_id}\nTarget: {target_id}")
             elif command == "leave":
                 await self.leave(owner_id)
-                await event.reply("🛑 𝐒𝐎𝐔𝐑𝐂𝐄 & 𝐓𝐀𝐑𝐆𝐄𝐓 VC se disconnect ho gaya.")
+                await self._reply_custom(event, "🛑 𝐒𝐎𝐔𝐑𝐂𝐄 & 𝐓𝐀𝐑𝐆𝐄𝐓 VC se disconnect ho gaya.", owner_id)
             else:
                 if not argument:
                     current = row.get("effects", {}).get(command, "default")
@@ -241,6 +249,6 @@ class HostedManager:
                     return
                 value = float(argument.split()[0])
                 actual = await self.set_effect(owner_id, command, value)
-                await event.reply(f"✅ 𝐀𝐮𝐝𝐢𝐨 {command.upper()} set: {actual:g}")
+                await self._reply_custom(event, f"✅ 𝐀𝐮𝐝𝐢𝐨 {command.upper()} set: {actual:g}", owner_id)
         except Exception as exc:
-            await event.reply(f"⚠️ {str(exc)}")
+            await self._reply_custom(event, f"⚠️ {str(exc)}", owner_id)
