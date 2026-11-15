@@ -29,6 +29,7 @@ def home_keyboard():
         [InlineKeyboardButton(text="𝐇𝐄𝐋𝐏 & 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒", callback_data="help", style="primary", icon_custom_emoji_id="5411513635950325417")],
         [InlineKeyboardButton(text="𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑", callback_data="eq", style="primary", icon_custom_emoji_id="5411636351755905742"), InlineKeyboardButton(text="𝐕𝐎𝐋𝐔𝐌𝐄", callback_data="vol", style="success", icon_custom_emoji_id="5411218262459445111")],
         [InlineKeyboardButton(text="𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒", callback_data="fx", style="danger", icon_custom_emoji_id="5411210419849163902")],
+        [InlineKeyboardButton(text="𝐃𝐄𝐕𝐄𝐋𝐎𝐏𝐄𝐑", url="https://t.me/SAREEF_FUCKER", style="danger", icon_custom_emoji_id="6091123254842366873")],
     ])
 
 
