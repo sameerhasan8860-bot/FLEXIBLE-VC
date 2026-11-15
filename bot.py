@@ -26,21 +26,39 @@ EFFECTS = {"db": "Volume in decibels", "gain": "Linear output gain", "bass": "Lo
 def home_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="𝐇𝐎𝐒𝐓 𝐀𝐂𝐂𝐎𝐔𝐍𝐓", callback_data="host", style="success", icon_custom_emoji_id="6328067014195684470")],
-        [InlineKeyboardButton(text="📚 𝐇𝐄𝐋𝐏 & 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒", callback_data="help", style="primary")],
-        [InlineKeyboardButton(text="🎚️ 𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑", callback_data="eq", style="primary"), InlineKeyboardButton(text="🔊 𝐕𝐎𝐋𝐔𝐌𝐄", callback_data="vol", style="success")],
-        [InlineKeyboardButton(text="✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒", callback_data="fx", style="danger")],
+        [InlineKeyboardButton(text="𝐇𝐄𝐋𝐏 & 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒", callback_data="help", style="primary", icon_custom_emoji_id="5411513635950325417")],
+        [InlineKeyboardButton(text="𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑", callback_data="eq", style="primary", icon_custom_emoji_id="5411636351755905742"), InlineKeyboardButton(text="𝐕𝐎𝐋𝐔𝐌𝐄", callback_data="vol", style="success", icon_custom_emoji_id="5411218262459445111")],
+        [InlineKeyboardButton(text="𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒", callback_data="fx", style="danger", icon_custom_emoji_id="5411210419849163902")],
     ])
 
 
 def category_keyboard(category):
     commands = {
-        "help": [("👤 /host", "cmd:host", "success"), ("🧹 /unhost", "cmd:unhost", "danger"), ("🔐 /privategroup", "cmd:privategroup", "primary"), ("🔗 /join", "cmd:join", "success"), ("🛑 /leave", "cmd:leave", "danger"), ("⚡ .join", "cmd:dotjoin", "success"), ("🚪 .leave", "cmd:dotleave", "danger")],
-        "eq": [("🎚️ /bass", "cmd:bass", "primary"), ("🎛️ /treble", "cmd:treble", "primary")],
-        "vol": [("🔊 /db", "cmd:db", "success"), ("📈 /gain", "cmd:gain", "success"), ("🚀 /level", "cmd:level", "danger")],
-        "fx": [("🔁 /echo", "cmd:echo", "primary"), ("⚡ /distortion", "cmd:distortion", "danger")],
+        "help": [
+            ("/host", "cmd:host", "success", "5411218404193363520"),
+            ("/unhost", "cmd:unhost", "danger", "5409326166156799980"),
+            ("/privategroup", "cmd:privategroup", "primary", "5411077907223180693"),
+            ("/join", "cmd:join", "success", "5411370291416820975"),
+            ("/leave", "cmd:leave", "danger", "5411387780523649678"),
+            (".join", "cmd:dotjoin", "success", "5411311574918919629"),
+            (".leave", "cmd:dotleave", "danger", "5411448605850496427"),
+        ],
+        "eq": [
+            ("/bass", "cmd:bass", "primary", "5411534067109751385"),
+            ("/treble", "cmd:treble", "primary", "5411558368034712251"),
+        ],
+        "vol": [
+            ("/db", "cmd:db", "success", "5408854995359524419"),
+            ("/gain", "cmd:gain", "success", "5411249589950902826"),
+            ("/level", "cmd:level", "danger", "5411200584374056500"),
+        ],
+        "fx": [
+            ("/echo", "cmd:echo", "primary", "5411472846645914012"),
+            ("/distortion", "cmd:distortion", "danger", "5411316015915102848"),
+        ],
     }
-    rows = [[InlineKeyboardButton(text=label, callback_data=data, style=style)] for label, data, style in commands.get(category, [])]
-    rows.append([InlineKeyboardButton(text="⬅️ 𝐇𝐎𝐌𝐄", callback_data="home", style="primary")])
+    rows = [[InlineKeyboardButton(text=label, callback_data=data, style=style, icon_custom_emoji_id=emoji_id)] for label, data, style, emoji_id in commands.get(category, [])]
+    rows.append([InlineKeyboardButton(text="𝐇𝐎𝐌𝐄", callback_data="home", style="primary", icon_custom_emoji_id="5411077907223180693")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 COMMAND_DETAILS = {
