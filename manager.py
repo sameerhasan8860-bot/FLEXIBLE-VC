@@ -178,15 +178,15 @@ class HostedManager:
         item = self.hosted.get(int(owner_id))
         if not item:
             raise RuntimeError("Account hosted nahi hai.")
-        actual = value
+        row = await self.storage.get_user(owner_id) or {}
         if item.get("bridge"):
             actual = item["bridge"].set_effect(name, value)
+            effects = dict(item["bridge"].processor.settings)
         else:
             from audio import AudioProcessor
-            processor = AudioProcessor()
+            processor = AudioProcessor(row.get("effects", {}))
             actual = processor.update(name, value)
-        row = await self.storage.get_user(owner_id) or {}
-        effects = {**row.get("effects", {}), name: actual}
+            effects = dict(processor.settings)
         await self.storage.save_user(owner_id, effects=effects)
         return actual
 
