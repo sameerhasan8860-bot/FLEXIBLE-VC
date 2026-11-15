@@ -25,24 +25,23 @@ EFFECTS = {"db": "Volume in decibels", "gain": "Linear output gain", "bass": "Lo
 
 def home_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🪄 𝐇𝐎𝐒𝐓 𝐀𝐂𝐂𝐎𝐔𝐍𝐓", callback_data="host")],
-        [InlineKeyboardButton(text="📚 𝐇𝐄𝐋𝐏 & 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒", callback_data="help")],
-        [InlineKeyboardButton(text="🎚️ 𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑", callback_data="eq"), InlineKeyboardButton(text="🔊 𝐕𝐎𝐋𝐔𝐌𝐄", callback_data="vol")],
-        [InlineKeyboardButton(text="✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒", callback_data="fx")],
+        [InlineKeyboardButton(text="🪄 𝐇𝐎𝐒𝐓 𝐀𝐂𝐂𝐎𝐔𝐍𝐓", callback_data="host", style="success")],
+        [InlineKeyboardButton(text="📚 𝐇𝐄𝐋𝐏 & 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒", callback_data="help", style="primary")],
+        [InlineKeyboardButton(text="🎚️ 𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑", callback_data="eq", style="primary"), InlineKeyboardButton(text="🔊 𝐕𝐎𝐋𝐔𝐌𝐄", callback_data="vol", style="success")],
+        [InlineKeyboardButton(text="✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒", callback_data="fx", style="danger")],
     ])
 
 
 def category_keyboard(category):
     commands = {
-        "help": [("👤 /host", "cmd:host"), ("🧹 /unhost", "cmd:unhost"), ("🔐 /privategroup", "cmd:privategroup"), ("🔗 /join", "cmd:join"), ("🛑 /leave", "cmd:leave"), ("⚡ .join", "cmd:dotjoin"), ("🚪 .leave", "cmd:dotleave")],
-        "eq": [("🎚️ /bass", "cmd:bass"), ("🎛️ /treble", "cmd:treble")],
-        "vol": [("🔊 /db", "cmd:db"), ("📈 /gain", "cmd:gain")],
-        "fx": [("🔁 /echo", "cmd:echo"), ("⚡ /distortion", "cmd:distortion")],
+        "help": [("👤 /host", "cmd:host", "success"), ("🧹 /unhost", "cmd:unhost", "danger"), ("🔐 /privategroup", "cmd:privategroup", "primary"), ("🔗 /join", "cmd:join", "success"), ("🛑 /leave", "cmd:leave", "danger"), ("⚡ .join", "cmd:dotjoin", "success"), ("🚪 .leave", "cmd:dotleave", "danger")],
+        "eq": [("🎚️ /bass", "cmd:bass", "primary"), ("🎛️ /treble", "cmd:treble", "primary")],
+        "vol": [("🔊 /db", "cmd:db", "success"), ("📈 /gain", "cmd:gain", "success")],
+        "fx": [("🔁 /echo", "cmd:echo", "primary"), ("⚡ /distortion", "cmd:distortion", "danger")],
     }
-    rows = [[InlineKeyboardButton(text=label, callback_data=data)] for label, data in commands.get(category, [])]
-    rows.append([InlineKeyboardButton(text="⬅️ 𝐇𝐎𝐌𝐄", callback_data="home")])
+    rows = [[InlineKeyboardButton(text=label, callback_data=data, style=style)] for label, data, style in commands.get(category, [])]
+    rows.append([InlineKeyboardButton(text="⬅️ 𝐇𝐎𝐌𝐄", callback_data="home", style="primary")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
-
 
 COMMAND_DETAILS = {
     "host": ("👤 𝐇𝐎𝐒𝐓 𝐀𝐂𝐂𝐎𝐔𝐍𝐓", "/host", "Start your own Telegram account login flow in the private bot DM.", "Open bot DM and send /host, then follow phone, login-code and optional 2FA prompts."),
@@ -74,9 +73,19 @@ async def command_detail_button(q: CallbackQuery):
     await q.message.edit_text(text, reply_markup=category_keyboard(category), parse_mode="HTML")
     await q.answer()
 
+HOME_TEXT = "╭━━〔 ✨ 𝐅𝐋𝐄𝐗𝐈𝐁𝐋𝐄 𝐕𝐂 〕━━╮\\n  𝐋𝐢𝐯𝐞 𝐕𝐨𝐢𝐜𝐞 𝐂𝐡𝐚𝐭 𝐁𝐫𝐢𝐝𝐠𝐞\\n╰━━━━━━━━━━━━━━━━━━╯\\n\\n🎧 Source VC ki mixed live audio target VC mein relay karo.\\n\\n👇 Start karne ke liye option select karo."
+
+
 @dp.message(Command("start"))
 async def start(message: Message):
-    await message.answer("╭━━〔 ✨ 𝐅𝐋𝐄𝐗𝐈𝐁𝐋𝐄 𝐕𝐂 〕━━╮\n  𝐋𝐢𝐯𝐞 𝐕𝐨𝐢𝐜𝐞 𝐂𝐡𝐚𝐭 𝐁𝐫𝐢𝐝𝐠𝐞\n╰━━━━━━━━━━━━━━━━━━╯\n\n🎧 Source VC ki mixed live audio target VC mein relay karo.\n\n👇 Start karne ke liye option select karo.", reply_markup=home_keyboard())
+    await message.answer(HOME_TEXT, reply_markup=home_keyboard())
+
+
+@dp.callback_query(F.data == "home")
+async def home_button(q: CallbackQuery):
+    await q.message.edit_text(HOME_TEXT, reply_markup=home_keyboard())
+    await q.answer()
+
 
 @dp.callback_query(F.data == "host")
 async def host_button(q: CallbackQuery):
