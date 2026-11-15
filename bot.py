@@ -80,6 +80,9 @@ async def start(message: Message):
 
 @dp.callback_query(F.data == "host")
 async def host_button(q: CallbackQuery):
+    if q.message.chat.type != "private":
+        await q.answer("Account hosting ke liye bot ka private DM open karo.", show_alert=True)
+        return
     await q.answer()
     await begin_host(q.from_user.id, q.message)
 
