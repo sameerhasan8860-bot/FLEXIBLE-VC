@@ -55,6 +55,20 @@ COMMAND_DETAILS = {
     "distortion": ("⚡ 𝐃𝐈𝐒𝐓𝐎𝐑𝐓𝐈𝐎𝐍", "/distortion <value>", "Add soft saturation/distortion to the relayed audio.", "Example: /distortion 40"),
 }
 
+
+@dp.callback_query(F.data.startswith("cmd:"))
+async def command_detail_button(q: CallbackQuery):
+    key = q.data.split(":", 1)[1]
+    detail = COMMAND_DETAILS.get(key)
+    if not detail:
+        await q.answer("Command detail not found", show_alert=True)
+        return
+    title, syntax, purpose, example = detail
+    text = title + "\\n\\n<b>Syntax:</b> <code>" + syntax + "</code>\\n\\n<b>Use:</b> " + purpose + "\\n\\n<b>Example:</b> <code>" + example + "</code>"
+    category = "help" if key in ("host", "unhost", "privategroup", "join", "leave") else ("eq" if key in ("bass", "treble") else ("vol" if key in ("db", "gain") else "fx"))
+    await q.message.edit_text(text, reply_markup=category_keyboard(category), parse_mode="HTML")
+    await q.answer()
+
 @dp.message(Command("start"))
 async def start(message: Message):
     await message.answer("╭━━〔 ✨ 𝐅𝐋𝐄𝐗𝐈𝐁𝐋𝐄 𝐕𝐂 〕━━╮\n  𝐋𝐢𝐯𝐞 𝐕𝐨𝐢𝐜𝐞 𝐂𝐡𝐚𝐭 𝐁𝐫𝐢𝐝𝐠𝐞\n╰━━━━━━━━━━━━━━━━━━╯\n\n🎧 Source VC ki mixed live audio target VC mein relay karo.\n\n👇 Start karne ke liye option select karo.", reply_markup=home_keyboard())
@@ -72,7 +86,7 @@ async def help_button(q: CallbackQuery):
         "vol": "🔊 𝐕𝐎𝐋𝐔𝐌𝐄\n/db <value> or .db <value> — dB volume. Example: .db 6\n/gain <value> or .gain <value> — linear gain. Example: .gain 1.5",
         "fx": "✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒\n/echo <value> or .echo <value> — echo amount. Example: .echo 35\n/distortion <value> or .distortion <value> — saturation. Example: .distortion 40",
     }
-    await q.message.edit_text(pages[q.data], reply_markup=home_keyboard())
+    await q.message.edit_text(pages[q.data], reply_markup=category_keyboard(q.data))
     await q.answer()
 
 async def begin_host(uid, message):
