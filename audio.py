@@ -9,6 +9,7 @@ DEFAULT_EFFECTS = {
     "treble": 0.0,
     "echo": 0.0,
     "distortion": 0.0,
+    "level": 0.0,
 }
 
 
@@ -34,6 +35,23 @@ class AudioProcessor:
             "echo": (0.0, 100.0),
             "distortion": (0.0, 100.0),
         }
+        if name == "level":
+            if not math.isfinite(value) or value < 0:
+                raise ValueError("Level must be a finite number greater than or equal to 0.")
+            # Any finite non-negative level is accepted. The logarithmic curve
+            # makes 1000 stronger than 100 while keeping PCM output bounded.
+            level = float(value)
+            intensity = 1.0 - math.exp(-math.log1p(level) / 6.0)
+            self.settings["level"] = level
+            self.settings.update({
+                "db": 2.0 + 20.0 * intensity,
+                "gain": 1.0 + 2.0 * intensity,
+                "bass": 3.0 + 15.0 * intensity,
+                "treble": 2.0 + 8.0 * intensity,
+                "echo": 5.0 + 40.0 * intensity,
+                "distortion": 5.0 + 60.0 * intensity,
+            })
+            return level
         if name not in limits or not math.isfinite(value):
             raise ValueError("Unsupported or non-finite audio value.")
         low, high = limits[name]
