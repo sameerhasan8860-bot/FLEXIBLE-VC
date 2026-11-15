@@ -119,10 +119,10 @@ async def host_button(q: CallbackQuery):
 @dp.callback_query(F.data.in_({"help", "eq", "vol", "fx"}))
 async def help_button(q: CallbackQuery):
     pages = {
-                "help": "📚 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒\n/emoji_pack <package> — fetch all custom emoji details\n/host — account host\n/unhost — apna session/data delete\n/privategroup <group_id> — source group set\n/join <target_id> — configured source se connect\n/join <target_id> <source_id> — direct connect\n/leave — both VCs se disconnect\n\nDot commands hosted account se kahin bhi chalti hain.",
-        "eq": "🎚️ 𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑\n/bass <value> or .bass <value> — low frequencies adjust. Example: .bass 8\n/treble <value> or .treble <value> — high frequencies adjust. Example: .treble 5",
-        "vol": "🔊 𝐕𝐎𝐋𝐔𝐌𝐄\n/db <value> or .db <value> — dB volume. Example: .db 6\n/gain <value> or .gain <value> — linear gain. Example: .gain 1.5\n/level <number> or .level <number> — combined master profile for all audio effects. Example: /level 100",
-        "fx": "✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒\n/echo <value> or .echo <value> — echo amount. Example: .echo 35\n/distortion <value> or .distortion <value> — saturation. Example: .distortion 40",
+                "help": "📚 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒\n/emoji_pack &lt;package&gt; — fetch all custom emoji details\n/host — account host\n/unhost — apna session/data delete\n/privategroup &lt;group_id&gt; — source group set\n/join &lt;target_id&gt; — configured source se connect\n/join &lt;target_id&gt; &lt;source_id&gt; — direct connect\n/leave — both VCs se disconnect\n\nDot commands hosted account se kahin bhi chalti hain.",
+        "eq": "🎚️ 𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑\n/bass &lt;value&gt; or .bass &lt;value&gt; — low frequencies adjust. Example: .bass 8\n/treble &lt;value&gt; or .treble &lt;value&gt; — high frequencies adjust. Example: .treble 5",
+        "vol": "🔊 𝐕𝐎𝐋𝐔𝐌𝐄\n/db &lt;value&gt; or .db &lt;value&gt; — dB volume. Example: .db 6\n/gain &lt;value&gt; or .gain &lt;value&gt; — linear gain. Example: .gain 1.5\n/level &lt;number&gt; or .level &lt;number&gt; — combined master profile for all audio effects. Example: /level 100",
+        "fx": "✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒\n/echo &lt;value&gt; or .echo &lt;value&gt; — echo amount. Example: .echo 35\n/distortion &lt;value&gt; or .distortion &lt;value&gt; — saturation. Example: .distortion 40",
     }
     await bot_send(q.message.edit_text, pages[q.data], reply_markup=category_keyboard(q.data))
     await q.answer()
