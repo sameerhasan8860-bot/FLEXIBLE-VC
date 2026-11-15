@@ -73,7 +73,7 @@ async def command_detail_button(q: CallbackQuery):
     await q.message.edit_text(text, reply_markup=category_keyboard(category), parse_mode="HTML")
     await q.answer()
 
-HOME_TEXT = "╭━━〔 ✨ 𝐅𝐋𝐄𝐗𝐈𝐁𝐋𝐄 𝐕𝐂 〕━━╮\\n  𝐋𝐢𝐯𝐞 𝐕𝐨𝐢𝐜𝐞 𝐂𝐡𝐚𝐭 𝐁𝐫𝐢𝐝𝐠𝐞\\n╰━━━━━━━━━━━━━━━━━━╯\\n\\n🎧 Source VC ki mixed live audio target VC mein relay karo.\\n\\n👇 Start karne ke liye option select karo."
+HOME_TEXT = "╭━━〔 ✨ 𝐅𝐋𝐄𝐗𝐈𝐁𝐋𝐄 𝐕𝐂 〕━━╮\n  𝐋𝐢𝐯𝐞 𝐕𝐨𝐢𝐜𝐞 𝐂𝐡𝐚𝐭 𝐁𝐫𝐢𝐝𝐠𝐞\n╰━━━━━━━━━━━━━━━━━━╯\n\n🎧 Source VC ki mixed live audio target VC mein relay karo.\n\n👇 Start karne ke liye option select karo."
 
 
 @dp.message(Command("start"))
