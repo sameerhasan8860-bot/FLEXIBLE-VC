@@ -238,14 +238,14 @@ class HostedManager:
                 if not source_id:
                     raise RuntimeError("Pehle bot DM mein /privategroup <source_group_id> ya /join <target_id> <source_id> set karo.")
                 await self.start_bridge(owner_id, int(source_id), target_id)
-                await event.reply(f"🔊 𝐕𝐂 𝐁𝐑𝐈𝐃𝐆𝐄 𝐀𝐂𝐓𝐈𝐕𝐄\nSource: {source_id}\nTarget: {target_id}")
+                await self._reply_custom(event, f"🔊 𝐕𝐂 𝐁𝐑𝐈𝐃𝐆𝐄 𝐀𝐂𝐓𝐈𝐕𝐄\nSource: {source_id}\nTarget: {target_id}", owner_id)
             elif command == "leave":
                 await self.leave(owner_id)
                 await self._reply_custom(event, "🛑 𝐒𝐎𝐔𝐑𝐂𝐄 & 𝐓𝐀𝐑𝐆𝐄𝐓 VC se disconnect ho gaya.", owner_id)
             else:
                 if not argument:
                     current = row.get("effects", {}).get(command, "default")
-                    await event.reply(f"🎚️ 𝐂𝐮𝐫𝐫𝐞𝐧𝐭 {command.upper()}: {current}\nExample: .{command} 10")
+                    await self._reply_custom(event, f"🎚️ 𝐂𝐮𝐫𝐫𝐞𝐧𝐭 {command.upper()}: {current}\nExample: .{command} 10", owner_id)
                     return
                 value = float(argument.split()[0])
                 actual = await self.set_effect(owner_id, command, value)
