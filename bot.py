@@ -21,7 +21,7 @@ dp = Dispatcher()
 storage = Storage()
 manager = HostedManager(storage)
 pending = {}
-EFFECTS = {"db": "Volume in decibels", "gain": "Linear output gain", "bass": "Low-frequency EQ", "treble": "High-frequency EQ", "echo": "Short feedback echo", "distortion": "Soft saturation effect"}
+EFFECTS = {"db": "Volume in decibels", "gain": "Linear output gain", "bass": "Low-frequency EQ", "treble": "High-frequency EQ", "echo": "Short feedback echo", "distortion": "Soft saturation effect", "level": "Combined master audio profile"}
 
 def home_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
@@ -36,7 +36,7 @@ def category_keyboard(category):
     commands = {
         "help": [("👤 /host", "cmd:host", "success"), ("🧹 /unhost", "cmd:unhost", "danger"), ("🔐 /privategroup", "cmd:privategroup", "primary"), ("🔗 /join", "cmd:join", "success"), ("🛑 /leave", "cmd:leave", "danger"), ("⚡ .join", "cmd:dotjoin", "success"), ("🚪 .leave", "cmd:dotleave", "danger")],
         "eq": [("🎚️ /bass", "cmd:bass", "primary"), ("🎛️ /treble", "cmd:treble", "primary")],
-        "vol": [("🔊 /db", "cmd:db", "success"), ("📈 /gain", "cmd:gain", "success")],
+        "vol": [("🔊 /db", "cmd:db", "success"), ("📈 /gain", "cmd:gain", "success"), ("🚀 /level", "cmd:level", "danger")],
         "fx": [("🔁 /echo", "cmd:echo", "primary"), ("⚡ /distortion", "cmd:distortion", "danger")],
     }
     rows = [[InlineKeyboardButton(text=label, callback_data=data, style=style)] for label, data, style in commands.get(category, [])]
@@ -57,6 +57,7 @@ COMMAND_DETAILS = {
     "treble": ("🎛️ 𝐓𝐑𝐄𝐁𝐋𝐄", "/treble <value>", "Boost or reduce high-frequency energy for a brighter or softer sound.", "Example: /treble 5"),
     "echo": ("🔁 𝐄𝐂𝐇𝐎", "/echo <value>", "Add a short feedback echo. Set 0 to disable.", "Example: /echo 35"),
     "distortion": ("⚡ 𝐃𝐈𝐒𝐓𝐎𝐑𝐓𝐈𝐎𝐍", "/distortion <value>", "Add soft saturation/distortion to the relayed audio.", "Example: /distortion 40"),
+    "level": ("🚀 𝐌𝐀𝐒𝐓𝐄𝐑 𝐋𝐄𝐕𝐄𝐋", "/level <number>", "Set a combined master profile that adjusts loudness, gain, bass, treble, echo and distortion together. Higher values produce a stronger profile; the audio engine keeps the actual signal within safe output bounds.", "Examples: /level 1  |  /level 100  |  /level 1000"),
 }
 
 
@@ -69,7 +70,7 @@ async def command_detail_button(q: CallbackQuery):
         return
     title, syntax, purpose, example = detail
     text = title + "\n\n<b>Syntax:</b> <code>" + html.escape(syntax) + "</code>\n\n<b>Use:</b> " + html.escape(purpose) + "\n\n<b>Example:</b> <code>" + html.escape(example) + "</code>"
-    category = "help" if key in ("host", "unhost", "privategroup", "join", "leave", "dotjoin", "dotleave") else ("eq" if key in ("bass", "treble") else ("vol" if key in ("db", "gain") else "fx"))
+    category = "help" if key in ("host", "unhost", "privategroup", "join", "leave", "dotjoin", "dotleave") else ("eq" if key in ("bass", "treble") else ("vol" if key in ("db", "gain", "level") else "fx"))
     await q.message.edit_text(text, reply_markup=category_keyboard(category), parse_mode="HTML")
     await q.answer()
 
@@ -100,7 +101,7 @@ async def help_button(q: CallbackQuery):
     pages = {
         "help": "📚 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒\n/host — account host\n/unhost — apna session/data delete\n/privategroup <group_id> — source group set\n/join <target_id> — configured source se connect\n/join <target_id> <source_id> — direct connect\n/leave — both VCs se disconnect\n\nDot commands hosted account se kahin bhi chalti hain.",
         "eq": "🎚️ 𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑\n/bass <value> or .bass <value> — low frequencies adjust. Example: .bass 8\n/treble <value> or .treble <value> — high frequencies adjust. Example: .treble 5",
-        "vol": "🔊 𝐕𝐎𝐋𝐔𝐌𝐄\n/db <value> or .db <value> — dB volume. Example: .db 6\n/gain <value> or .gain <value> — linear gain. Example: .gain 1.5",
+        "vol": "🔊 𝐕𝐎𝐋𝐔𝐌𝐄\n/db <value> or .db <value> — dB volume. Example: .db 6\n/gain <value> or .gain <value> — linear gain. Example: .gain 1.5\n/level <number> or .level <number> — combined master profile for all audio effects. Example: /level 100",
         "fx": "✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒\n/echo <value> or .echo <value> — echo amount. Example: .echo 35\n/distortion <value> or .distortion <value> — saturation. Example: .distortion 40",
     }
     await q.message.edit_text(pages[q.data], reply_markup=category_keyboard(q.data))
@@ -260,7 +261,7 @@ async def text_router(message: Message):
                     pass
             await bot.send_message(uid, "Login fail hua. /host se dobara start karo.")
         return
-    match = re.match(r"^/(db|gain|bass|treble|echo|distortion)(?:\s+(.+))?$", message.text.strip(), re.I)
+    match = re.match(r"^/(level|db|gain|bass|treble|echo|distortion)(?:\s+(.+))?$", message.text.strip(), re.I)
     if not match:
         return
     owner = await command_owner(message)
