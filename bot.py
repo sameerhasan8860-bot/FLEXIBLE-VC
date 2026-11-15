@@ -139,10 +139,10 @@ async def leave_cmd(message: Message):
 
 @dp.message()
 async def text_router(message: Message):
-    if message.chat.type != "private" or not message.from_user or not message.text:
+    if not message.from_user or not message.text:
         return
     uid = message.from_user.id
-    state = pending.get(uid)
+    state = pending.get(uid) if message.chat.type == "private" else None
     if state:
         text = message.text.strip()
         try:
