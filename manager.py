@@ -95,8 +95,8 @@ class HostedManager:
             raise RuntimeError("Pehle /host se account host karo.")
         if int(source_id) == int(target_id):
             raise RuntimeError("Source aur target group alag hone chahiye.")
-        if item.get("bridge"):
-            bridge = item["bridge"]
+        bridge = item.get("bridge")
+        if bridge and bridge.connected:
             if bridge.source_id == int(source_id) and bridge.target_id == int(target_id):
                 return
             try:
@@ -121,15 +121,16 @@ class HostedManager:
         if not target_active and not target_can_start:
             raise RuntimeError(f"Target VC ({target_id}) band hai. Admin se VC start karwao.")
 
-        bridge = VoiceBridge(
-            item["client"], source_id, target_id,
-            (await self.storage.get_user(owner_id) or {}).get("effects", {}),
-        )
+        effects = (await self.storage.get_user(owner_id) or {}).get("effects", {})
+        if bridge is None:
+            bridge = VoiceBridge(item["client"], source_id, target_id, effects)
+            item["bridge"] = bridge
+        else:
+            bridge.configure(source_id, target_id, effects)
         await bridge.connect(
             source_auto_start=not source_active,
             target_auto_start=not target_active,
         )
-        item["bridge"] = bridge
         await self.storage.save_user(
             owner_id,
             source_group_id=int(source_id),
@@ -169,7 +170,6 @@ class HostedManager:
         bridge = item.get("bridge")
         if bridge:
             await bridge.disconnect()
-            item["bridge"] = None
         await self.storage.save_user(
             owner_id, active=False, source_group_id=None, target_group_id=None
         )
