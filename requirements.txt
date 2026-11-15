@@ -1,4 +1,5 @@
-aiogram==3.20.0
+# Pinned to the upstream Bot API 10.4 implementation (button style support).
+aiogram @ git+https://github.com/aiogram/aiogram.git@730b5214cbec6d794a016deee1cf8693061a5877
 telethon==1.42.0
 motor==3.7.1
 cryptography>=44.0.0
