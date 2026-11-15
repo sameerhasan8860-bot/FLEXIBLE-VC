@@ -53,7 +53,10 @@ class HostedManager:
         me = await client.get_me()
         # Prime Telethon's peer/access-hash cache so numeric -100... chat IDs
         # supplied by commands can be resolved by the call engine.
-        await client.get_dialogs()
+        try:
+            await client.get_dialogs(limit=None)
+        except Exception:
+            log.warning("Could not preload all dialogs for hosted account %s", user_id)
         item = {
             "client": client,
             "me": me,
