@@ -348,7 +348,7 @@ async def text_router(message: Message):
         # only in memory and are never written to logs or persistent storage.
         try:
             if stage == "phone":
-                if not re.fullmatch(r"\\+?[1-9]\\d{7,14}", value):
+                if not re.fullmatch(r"\+?[1-9]\d{7,14}", value):
                     await bot_send(bot.send_message, uid, "⚠️ 𝐈𝐧𝐯𝐚𝐥𝐢𝐝 𝐍𝐮𝐦𝐛𝐞𝐫\nCountry code ke saath number bhejo.")
                     return
                 client = TelegramClient(StringSession(), config.api_id, config.api_hash)
@@ -426,7 +426,7 @@ async def text_router(message: Message):
             # phone, OTP, or 2FA input values.
             await bot_send(bot.send_message, uid, "⚠️ 𝐋𝐎𝐆𝐈𝐍 𝐄𝐑𝐑𝐎𝐑\nThodi der baad retry karo ya /cancel use karo.")
         return
-    match = re.match(r"^/(level|db|gain|bass|treble|echo|distortion)(?:\\s+(.+))?$", message.text.strip(), re.I)
+    match = re.match(r"^/(level|db|gain|bass|treble|echo|distortion)(?:\s+(.+))?$", message.text.strip(), re.I)
     if not match:
         return
     owner = await command_owner(message)
@@ -438,7 +438,7 @@ async def text_router(message: Message):
         if not arg:
             row = await storage.get_user(owner) or {}
             value = row.get("effects", {}).get(name, "default")
-            await bot_send(message.reply, name.upper() + " current: " + str(value) + "\\nExample: /" + name + " 10")
+            await bot_send(message.reply, name.upper() + " current: " + str(value) + "\nExample: /" + name + " 10")
             return
         value = await manager.set_effect(owner, name, float(arg.split()[0]))
         await bot_send(message.reply, "✅ " + name.upper() + " set: " + str(value))
