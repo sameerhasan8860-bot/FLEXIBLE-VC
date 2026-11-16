@@ -431,7 +431,7 @@ async def text_router(message: Message):
             # phone, OTP, or 2FA input values.
             await bot_send(bot.send_message, uid, "⚠️ 𝐋𝐎𝐆𝐈𝐍 𝐄𝐑𝐑𝐎𝐑\nThodi der baad retry karo ya /cancel use karo.")
         return
-    match = re.match(r"^/(level|db|gain|bass|treble|echo|distortion)(?:\s+(.+))?$", message.text.strip(), re.I)
+    match = re.match(r"^/(reset|level|db|gain|bass|treble|echo|distortion)(?:\s+(.+))?$", message.text.strip(), re.I)
     if not match:
         return
     owner = await command_owner(message)
