@@ -6,7 +6,7 @@ from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from telethon import TelegramClient, events
-from telethon.errors import SessionPasswordNeededError
+from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, PhoneCodeExpiredError, PasswordHashInvalidError, PhoneNumberInvalidError
 from telethon.sessions import StringSession
 from config import config, validate_config
 from storage import Storage
@@ -132,7 +132,7 @@ async def begin_host(uid, message):
         await bot_send(message.answer, "Tumhara account pehle se hosted hai. /unhost use karo.")
         return
     pending[uid] = {"stage": "phone"}
-    await bot_send(message.answer, "🪄 Apna phone number international format mein bhejo. Example: +91XXXXXXXXXX\nSirf apna account host karo. OTP/2FA password share karne ke baad message delete kar diya jayega.")
+    await bot_send(message.answer, "✦ 𝐇𝐎𝐒𝐓 𝐀𝐂𝐂𝐎𝐔𝐍𝐓\nApna number bhejo.\nExample: +91XXXXXXXXXX\n\nSirf apna account login karo.")
 
 @dp.message(Command("emoji_pack"))
 async def emoji_pack_cmd(message: Message):
@@ -341,47 +341,92 @@ async def text_router(message: Message):
     uid = message.from_user.id
     state = pending.get(uid) if message.chat.type == "private" else None
     if state:
-        text = message.text.strip()
+        value = message.text.strip()
+        stage = state.get("stage")
+
+        # Keep the phone number message visible. OTP/2FA values are processed
+        # only in memory and are never written to logs or persistent storage.
         try:
-            await message.delete()
-        except Exception:
-            pass
-        try:
-            if state["stage"] == "phone":
-                if not re.fullmatch(r"\+?[1-9]\d{7,14}", text):
-                    await bot_send(bot.send_message, uid, "Phone format invalid. Example: +91XXXXXXXXXX")
+            if stage == "phone":
+                if not re.fullmatch(r"\\+?[1-9]\\d{7,14}", value):
+                    await bot_send(bot.send_message, uid, "⚠️ 𝐈𝐧𝐯𝐚𝐥𝐢𝐝 𝐍𝐮𝐦𝐛𝐞𝐫\nCountry code ke saath number bhejo.")
                     return
                 client = TelegramClient(StringSession(), config.api_id, config.api_hash)
                 await client.connect()
-                sent = await client.send_code_request(text)
-                pending[uid] = {"stage": "code", "client": client, "phone": text, "hash": sent.phone_code_hash}
-                await bot_send(bot.send_message, uid, "📩 Telegram login code bhejo. Code private rakho.")
-                return
-            if state["stage"] == "code":
                 try:
-                    await state["client"].sign_in(phone=state["phone"], code=text, phone_code_hash=state["hash"])
+                    sent = await client.send_code_request(value)
+                except Exception:
+                    await client.disconnect()
+                    log.warning("Telegram code request failed for user %s", uid)
+                    await bot_send(bot.send_message, uid, "⚠️ 𝐎𝐓𝐏 𝐒𝐄𝐍𝐃 𝐍𝐎𝐓 𝐒𝐄𝐍𝐓\nNumber check karke dobara bhejo.")
+                    return
+                pending[uid] = {
+                    "stage": "code", "client": client, "phone": value,
+                    "hash": sent.phone_code_hash, "attempts": 0,
+                }
+                await bot_send(bot.send_message, uid, "✉️ 𝐄𝐍𝐓𝐄𝐑 𝐎𝐓𝐏\nTelegram par aaya login code bhejo. (3 attempts)")
+                return
+
+            if stage == "code":
+                try:
+                    await state["client"].sign_in(
+                        phone=state["phone"], code=value,
+                        phone_code_hash=state["hash"],
+                    )
                 except SessionPasswordNeededError:
                     state["stage"] = "password"
-                    await bot_send(bot.send_message, uid, "🔐 2-Step Verification password bhejo.")
+                    state["attempts"] = 0
+                    await bot_send(bot.send_message, uid, "🔐 𝐄𝐍𝐓𝐄𝐑 𝟐𝐅𝐀\nAccount password bhejo. (3 attempts)")
+                    return
+                except PhoneCodeInvalidError:
+                    state["attempts"] = state.get("attempts", 0) + 1
+                    left = 3 - state["attempts"]
+                    if left <= 0:
+                        await state["client"].disconnect()
+                        pending.pop(uid, None)
+                        await bot_send(bot.send_message, uid, "⛔ 𝐋𝐎𝐆𝐈𝐍 𝐂𝐋𝐎𝐒𝐄𝐃\n3 wrong OTP attempts. /host se restart karo.")
+                    else:
+                        await bot_send(bot.send_message, uid, f"⚠️ 𝐖𝐑𝐎𝐍𝐆 𝐎𝐓𝐏\n{left} attempts left. Dobara bhejo.")
+                    return
+                except PhoneCodeExpiredError:
+                    await state["client"].disconnect()
+                    pending.pop(uid, None)
+                    await bot_send(bot.send_message, uid, "⌛ 𝐎𝐓𝐏 𝐄𝐗𝐏𝐈𝐑𝐄𝐃\n/host se dobara start karo.")
+                    return
+                client = state["client"]
+
+            elif stage == "password":
+                try:
+                    await state["client"].sign_in(password=value)
+                except PasswordHashInvalidError:
+                    state["attempts"] = state.get("attempts", 0) + 1
+                    left = 3 - state["attempts"]
+                    if left <= 0:
+                        await state["client"].disconnect()
+                        pending.pop(uid, None)
+                        await bot_send(bot.send_message, uid, "⛔ 𝐋𝐎𝐆𝐈𝐍 𝐂𝐋𝐎𝐒𝐄𝐃\n3 wrong 2FA attempts. /host se restart karo.")
+                    else:
+                        await bot_send(bot.send_message, uid, f"⚠️ 𝐖𝐑𝐎𝐍𝐆 𝟐𝐅𝐀\n{left} attempts left. Dobara bhejo.")
                     return
                 client = state["client"]
             else:
-                await state["client"].sign_in(password=text)
-                client = state["client"]
+                pending.pop(uid, None)
+                await bot_send(bot.send_message, uid, "⚠️ Login state reset. /host se restart karo.")
+                return
+
             await manager.add_authenticated_client(uid, client)
             pending.pop(uid, None)
-            await bot_send(bot.send_message, uid, "✅ 𝐀𝐂𝐂𝐎𝐔𝐍𝐓 𝐇𝐎𝐒𝐓𝐄𝐃 — ab /privategroup ya /join use karo.")
+            await bot_send(bot.send_message, uid, "✅ 𝐀𝐂𝐂𝐎𝐔𝐍𝐓 𝐇𝐎𝐒𝐓𝐄𝐃\nAb /privategroup ya /join use karo.")
+
+        except PhoneNumberInvalidError:
+            await bot_send(bot.send_message, uid, "⚠️ 𝐈𝐍𝐕𝐀𝐋𝐈𝐃 𝐍𝐔𝐌𝐁𝐄𝐑\nCountry code ke saath dobara bhejo.")
         except Exception as exc:
-            log.warning("Host flow failed for user %s: %s", uid, type(exc).__name__)
-            pending_state = pending.pop(uid, None)
-            if pending_state and pending_state.get("client"):
-                try:
-                    await pending_state["client"].disconnect()
-                except Exception:
-                    pass
-            await bot_send(bot.send_message, uid, "Login fail hua. /host se dobara start karo.")
+            log.warning("Host flow error for user %s at stage %s: %s", uid, stage, type(exc).__name__)
+            # Keep the active login state for recoverable errors; never log
+            # phone, OTP, or 2FA input values.
+            await bot_send(bot.send_message, uid, "⚠️ 𝐋𝐎𝐆𝐈𝐍 𝐄𝐑𝐑𝐎𝐑\nThodi der baad retry karo ya /cancel use karo.")
         return
-    match = re.match(r"^/(level|db|gain|bass|treble|echo|distortion)(?:\s+(.+))?$", message.text.strip(), re.I)
+    match = re.match(r"^/(level|db|gain|bass|treble|echo|distortion)(?:\\s+(.+))?$", message.text.strip(), re.I)
     if not match:
         return
     owner = await command_owner(message)
@@ -393,7 +438,7 @@ async def text_router(message: Message):
         if not arg:
             row = await storage.get_user(owner) or {}
             value = row.get("effects", {}).get(name, "default")
-            await bot_send(message.reply, name.upper() + " current: " + str(value) + "\nExample: /" + name + " 10")
+            await bot_send(message.reply, name.upper() + " current: " + str(value) + "\\nExample: /" + name + " 10")
             return
         value = await manager.set_effect(owner, name, float(arg.split()[0]))
         await bot_send(message.reply, "✅ " + name.upper() + " set: " + str(value))
