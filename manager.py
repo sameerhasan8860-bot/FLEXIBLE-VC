@@ -176,6 +176,17 @@ class HostedManager:
             owner_id, active=False, source_group_id=None, target_group_id=None
         )
 
+    async def reset_effects(self, owner_id: int):
+        item = self.hosted.get(int(owner_id))
+        if not item:
+            raise RuntimeError("Account hosted nahi hai.")
+        from audio import AudioProcessor, DEFAULT_EFFECTS
+        if item.get("bridge"):
+            item["bridge"].processor.reset()
+        effects = dict(DEFAULT_EFFECTS)
+        await self.storage.save_user(owner_id, effects=effects)
+        return effects
+
     async def set_effect(self, owner_id: int, name: str, value: float):
         item = self.hosted.get(int(owner_id))
         if not item:
@@ -246,9 +257,13 @@ class HostedManager:
             elif command == "leave":
                 await self.leave(owner_id)
                 await self._reply_custom(event, "🛑 𝐒𝐎𝐔𝐑𝐂𝐄 & 𝐓𝐀𝐑𝐆𝐄𝐓 VC se disconnect ho gaya.", owner_id)
+            elif command == "reset":
+                await self.reset_effects(owner_id)
+                await self._reply_custom(event, "♻️ 𝐀𝐋𝐋 𝐄𝐅𝐅𝐄𝐂𝐓𝐒 𝐑𝐄𝐒𝐄𝐓\nAll audio controls original defaults par aa gaye.", owner_id)
             else:
                 if not argument:
-                    current = row.get("effects", {}).get(command, "default")
+                    from audio import DEFAULT_EFFECTS
+                    current = row.get("effects", {}).get(command, DEFAULT_EFFECTS[command])
                     await self._reply_custom(event, f"🎚️ 𝐂𝐮𝐫𝐫𝐞𝐧𝐭 {command.upper()}: {current}\nExample: .{command} 10", owner_id)
                     return
                 value = float(argument.split()[0])
