@@ -397,7 +397,15 @@ async def text_router(message: Message):
                         pending.pop(uid, None)
                         await bot_send(bot.send_message, uid, "⛔ 𝐋𝐎𝐆𝐈𝐍 𝐂𝐋𝐎𝐒𝐄𝐃\n3 wrong OTP attempts. /host se restart karo.")
                     else:
-                        await bot_send(bot.send_message, uid, f"⚠️ 𝐖𝐑𝐎𝐍𝐆 𝐎𝐓𝐏\n{left} attempts left. Dobara OTP bhejo.")
+                        # Request a fresh code after a rejected code. Telegram may
+                        # invalidate the previous code, so always update its hash.
+                        try:
+                            sent = await state["client"].send_code_request(state["phone"])
+                            state["hash"] = sent.phone_code_hash
+                            await bot_send(bot.send_message, uid, f"⚠️ 𝐖𝐑𝐎𝐍𝐆 𝐎𝐓𝐏\n{left} attempts left. Telegram par naya OTP bheja hai; ab latest OTP bhejo.")
+                        except Exception as exc:
+                            log.warning("Could not refresh OTP after invalid code for user %s: %s", uid, type(exc).__name__)
+                            await bot_send(bot.send_message, uid, f"⚠️ 𝐖𝐑𝐎𝐍𝐆 𝐎𝐓𝐏\n{left} attempts left, lekin naya OTP request nahi ho saka. Thodi der baad dobara try karo.")
                     return
                 except PhoneCodeExpiredError:
                     # Refresh an expired code without restarting the complete host flow.
