@@ -236,7 +236,7 @@ class HostedManager:
 
     async def handle_dot_command(self, owner_id: int, event):
         import re
-        match = re.match(r"^\.(join|leave|level|db|gain|bass|treble|echo|distortion)(?:\s+(.+))?$", event.raw_text.strip(), re.I)
+        match = re.match(r"^\.(join|leave|reset|level|db|gain|bass|treble|echo|distortion)(?:\s+(.+))?$", event.raw_text.strip(), re.I)
         if not match:
             return
         command, argument = match.group(1).lower(), (match.group(2) or "").strip()
