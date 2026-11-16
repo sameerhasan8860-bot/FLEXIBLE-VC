@@ -42,6 +42,8 @@ def category_keyboard(category):
             ("/privategroup", "cmd:privategroup", "primary", "5411077907223180693"),
             ("/join", "cmd:join", "success", "5411370291416820975"),
             ("/leave", "cmd:leave", "danger", "5411387780523649678"),
+            ("/cancel", "cmd:cancel", "danger", "5409326166156799980"),
+            ("/level", "cmd:level", "success", "5411200584374056500"),
             (".join", "cmd:dotjoin", "success", "5411311574918919629"),
             (".leave", "cmd:dotleave", "danger", "5411448605850496427"),
         ],
@@ -66,6 +68,7 @@ def category_keyboard(category):
 COMMAND_DETAILS = {
     "host": ("👤 𝐇𝐎𝐒𝐓 𝐀𝐂𝐂𝐎𝐔𝐍𝐓", "/host", "Start your own Telegram account login flow in the private bot DM.", "Open bot DM and send /host, then follow phone, login-code and optional 2FA prompts."),
     "unhost": ("🧹 𝐔𝐍𝐇𝐎𝐒𝐓", "/unhost", "Disconnect your hosted account and delete only your encrypted session and settings from MongoDB.", "Send /unhost in the private bot DM."),
+    "cancel": ("🛑 𝐂𝐀𝐍𝐂𝐄𝐋", "/cancel", "Stop an active account login/hosting process and disconnect its temporary login session.", "Send /cancel any time during /host."),
     "privategroup": ("🔐 𝐏𝐑𝐈𝐕𝐀𝐓𝐄𝐆𝐑𝐎𝐔𝐏", "/privategroup <group_id>", "Set the source group. Add this bot as an administrator in that group first.", "Example: /privategroup -1001234567890"),
     "join": ("🔗 𝐉𝐎𝐈𝐍 𝐕𝐂", "/join <target_id> [source_id]", "Connect the hosted account to source and target voice chats. If source_id is omitted, the configured source is used.", "Examples: /join -1002222222222  OR  /join -1002222222222 -1001111111111"),
     "leave": ("🛑 𝐋𝐄𝐀𝐕𝐄 𝐕𝐂", "/leave", "Leave both source and target voice chats.", "Example: /leave"),
@@ -90,7 +93,7 @@ async def command_detail_button(q: CallbackQuery):
         return
     title, syntax, purpose, example = detail
     text = title + "\n\n<b>Syntax:</b> <code>" + html.escape(syntax) + "</code>\n\n<b>Use:</b> " + html.escape(purpose) + "\n\n<b>Example:</b> <code>" + html.escape(example) + "</code>"
-    category = "help" if key in ("host", "unhost", "privategroup", "join", "leave", "dotjoin", "dotleave") else ("eq" if key in ("bass", "treble") else ("vol" if key in ("db", "gain", "level") else "fx"))
+    category = "help" if key in ("host", "unhost", "cancel", "privategroup", "join", "leave", "dotjoin", "dotleave", "level") else ("eq" if key in ("bass", "treble") else ("vol" if key in ("db", "gain") else "fx"))
     await bot_send(q.message.edit_text, text, reply_markup=category_keyboard(category), parse_mode="HTML")
     await q.answer()
 
@@ -252,7 +255,7 @@ async def cancel_host(message: Message):
             await state["client"].disconnect()
         except Exception:
             pass
-    await bot_send(message.reply, "Login/hosting flow cancelled.")
+    await bot_send(message.reply, "🛑 𝐇𝐎𝐒𝐓 𝐂𝐀𝐍𝐂𝐄𝐋𝐋𝐄𝐃\\nLogin process stopped. /host se dobara start karo." )
 
 @dp.message(Command("unhost"))
 async def unhost_cmd(message: Message):
