@@ -373,9 +373,14 @@ async def text_router(message: Message):
                 return
 
             if stage == "code":
+                # Accept both "12345" and "1 2 3 4 5".
+                code = re.sub(r"\s+", "", value)
+                if not code.isdigit():
+                    await bot_send(bot.send_message, uid, "⚠️ Sirf OTP ke digits bhejo. Example: 12345 ya 1 2 3 4 5.")
+                    return
                 try:
                     await state["client"].sign_in(
-                        phone=state["phone"], code=value,
+                        phone=state["phone"], code=code,
                         phone_code_hash=state["hash"],
                     )
                 except SessionPasswordNeededError:
@@ -391,12 +396,22 @@ async def text_router(message: Message):
                         pending.pop(uid, None)
                         await bot_send(bot.send_message, uid, "⛔ 𝐋𝐎𝐆𝐈𝐍 𝐂𝐋𝐎𝐒𝐄𝐃\n3 wrong OTP attempts. /host se restart karo.")
                     else:
-                        await bot_send(bot.send_message, uid, f"⚠️ 𝐖𝐑𝐎𝐍𝐆 𝐎𝐓𝐏\n{left} attempts left. Dobara bhejo.")
+                        await bot_send(bot.send_message, uid, f"⚠️ 𝐖𝐑𝐎𝐍𝐆 𝐎𝐓𝐏\n{left} attempts left. Dobara OTP bhejo.")
                     return
                 except PhoneCodeExpiredError:
-                    await state["client"].disconnect()
-                    pending.pop(uid, None)
-                    await bot_send(bot.send_message, uid, "⌛ 𝐎𝐓𝐏 𝐄𝐗𝐏𝐈𝐑𝐄𝐃\n/host se dobara start karo.")
+                    # Refresh an expired code without restarting the complete host flow.
+                    try:
+                        sent = await state["client"].send_code_request(state["phone"])
+                        state["hash"] = sent.phone_code_hash
+                        state["attempts"] = 0
+                        await bot_send(bot.send_message, uid, "⌛ 𝐎𝐓𝐏 𝐄𝐗𝐏𝐈𝐑𝐄𝐃\nNaya login code request kiya hai. Telegram par aaya fresh OTP bhejo. (3 attempts)")
+                    except Exception as exc:
+                        log.warning("Could not refresh expired login code for user %s: %s", uid, type(exc).__name__)
+                        await bot_send(bot.send_message, uid, "⌛ OTP expired aur naya code request nahi ho saka. Thodi der baad /host dobara start karo.")
+                        try:
+                            await state["client"].disconnect()
+                        finally:
+                            pending.pop(uid, None)
                     return
                 client = state["client"]
 
