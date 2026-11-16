@@ -38,9 +38,16 @@ class AudioProcessor:
         if name == "level":
             if not math.isfinite(value) or value < 0:
                 raise ValueError("Level must be a finite number greater than or equal to 0.")
-            # Any finite non-negative level is accepted. The logarithmic curve
-            # makes 1000 stronger than 100 while keeping PCM output bounded.
             level = float(value)
+            if level == 0:
+                # Master reset restores the exact first-host defaults for every effect.
+                self.settings = dict(DEFAULT_EFFECTS)
+                self.echo_buffer.fill(0)
+                self.echo_pos = 0
+                self.low_state.fill(0)
+                return 0.0
+            # Any finite positive level is accepted. The logarithmic curve
+            # makes 1000 stronger than 100 while keeping PCM output bounded.
             intensity = 1.0 - math.exp(-math.log1p(level) / 6.0)
             self.settings["level"] = level
             self.settings.update({
@@ -55,8 +62,19 @@ class AudioProcessor:
         if name not in limits or not math.isfinite(value):
             raise ValueError("Unsupported or non-finite audio value.")
         low, high = limits[name]
-        actual = max(low, min(high, float(value)))
+        numeric = float(value)
+        if numeric == 0:
+            # A zero on an individual command means restore that control's
+            # original default, not merely retain a master-level profile.
+            actual = DEFAULT_EFFECTS[name]
+            if name == "echo":
+                self.echo_buffer.fill(0)
+                self.echo_pos = 0
+        else:
+            actual = max(low, min(high, numeric))
         self.settings[name] = actual
+        # Individual controls now override the master profile.
+        self.settings["level"] = 0.0
         return actual
 
     def process(self, pcm: bytes) -> bytes:
