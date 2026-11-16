@@ -369,7 +369,7 @@ async def text_router(message: Message):
                     "stage": "code", "client": client, "phone": value,
                     "hash": sent.phone_code_hash, "attempts": 0,
                 }
-                await bot_send(bot.send_message, uid, "✉️ 𝐄𝐍𝐓𝐄𝐑 𝐎𝐓𝐏\nTelegram par aaya login code bhejo. (3 attempts)")
+                await bot_send(bot.send_message, uid, "✉️ 𝐄𝐍𝐓𝐄𝐑 𝐎𝐓𝐏\nCode bhejo (3 attempts). Example: 1 2 3 4 5\n12345 bhi accept hoga.")
                 return
 
             if stage == "code":
