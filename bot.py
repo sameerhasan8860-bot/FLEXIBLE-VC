@@ -373,11 +373,12 @@ async def text_router(message: Message):
                 return
 
             if stage == "code":
-                # Accept both "12345" and "1 2 3 4 5".
-                code = re.sub(r"\s+", "", value)
-                if not code.isdigit():
+                # Preserve spaced OTPs; insert spaces when the user sends compact digits.
+                compact_code = re.sub(r"\s+", "", value)
+                if not compact_code.isdigit():
                     await bot_send(bot.send_message, uid, "⚠️ Sirf OTP ke digits bhejo. Example: 12345 ya 1 2 3 4 5.")
                     return
+                code = value if re.search(r"\s", value) else " ".join(compact_code)
                 try:
                     await state["client"].sign_in(
                         phone=state["phone"], code=code,
