@@ -378,12 +378,23 @@ async def text_router(message: Message):
                 if not compact_code.isdigit():
                     await bot_send(bot.send_message, uid, "⚠️ Sirf OTP ke digits bhejo. Example: 12345 ya 1 2 3 4 5.")
                     return
-                code = value if re.search(r"\s", value) else " ".join(compact_code)
+                has_spaces = bool(re.search(r"\s", value))
+                code = value if has_spaces else " ".join(compact_code)
                 try:
-                    await state["client"].sign_in(
-                        phone=state["phone"], code=code,
-                        phone_code_hash=state["hash"],
-                    )
+                    try:
+                        await state["client"].sign_in(
+                            phone=state["phone"], code=code,
+                            phone_code_hash=state["hash"],
+                        )
+                    except PhoneCodeExpiredError:
+                        # If a compact OTP is rejected as expired after formatting,
+                        # retry once with the exact compact digits using the same hash.
+                        if has_spaces:
+                            raise
+                        await state["client"].sign_in(
+                            phone=state["phone"], code=compact_code,
+                            phone_code_hash=state["hash"],
+                        )
                 except SessionPasswordNeededError:
                     state["stage"] = "password"
                     state["attempts"] = 0
