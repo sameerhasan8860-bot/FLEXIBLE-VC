@@ -61,12 +61,6 @@ jobs:
           done
           cat cloudflared.log
           exit 1
-      - name: Stop Cloudflare Tunnel
-        if: always()
-        run: |
-          if [ -f cloudflared.pid ]; then
-            kill "$(cat cloudflared.pid)" 2>/dev/null || true
-          fi
       - name: Compile Python sources
         run: python -m compileall -q .
       - name: Run audio unit tests
