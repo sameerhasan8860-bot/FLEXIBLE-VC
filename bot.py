@@ -40,6 +40,7 @@ def category_keyboard(category):
             ("/host", "cmd:host", "success", "5411218404193363520"),
             ("/unhost", "cmd:unhost", "danger", "5409326166156799980"),
             ("/privategroup", "cmd:privategroup", "primary", "5411077907223180693"),
+            ("/status", "cmd:status", "success", "5411200584374056500"),
             ("/join", "cmd:join", "success", "5411370291416820975"),
             ("/leave", "cmd:leave", "danger", "5411387780523649678"),
             ("/cancel", "cmd:cancel", "danger", "5409326166156799980"),
@@ -86,6 +87,7 @@ COMMAND_DETAILS = {
     "cancel": ("🛑 𝐂𝐀𝐍𝐂𝐄𝐋", "/cancel", "Stop an active account login/hosting process and disconnect its temporary login session.", "Send /cancel any time during /host."),
     "reset": ("♻️ 𝐑𝐄𝐒𝐄𝐓 𝐄𝐅𝐅𝐄𝐂𝐓𝐒", "/reset", "Restore db, gain, level, bass, treble, echo and distortion to their original defaults together.", "Send /reset. To reset only one control, use /db 0, /gain 0, /level 0, etc."),
     "privategroup": ("🔐 𝐏𝐑𝐈𝐕𝐀𝐓𝐄𝐆𝐑𝐎𝐔𝐏", "/privategroup <group_id>", "Set the source group. Add this bot as an administrator in that group first.", "Example: /privategroup -1001234567890"),
+    "status": ("📊 𝐋𝐈𝐕𝐄 𝐒𝐓𝐀𝐓𝐔𝐒", "/status", "Show active source/target groups, private-group details and every current VC audio control.", "Example: /status"),
     "join": ("🔗 𝐉𝐎𝐈𝐍 𝐕𝐂", "/join <target_id> [source_id]", "Connect the hosted account to source and target voice chats. If source_id is omitted, the configured source is used.", "Examples: /join -1002222222222  OR  /join -1002222222222 -1001111111111"),
     "leave": ("🛑 𝐋𝐄𝐀𝐕𝐄 𝐕𝐂", "/leave", "Leave both source and target voice chats.", "Example: /leave"),
     "dotjoin": ("⚡ 𝐃𝐎𝐓 𝐉𝐎𝐈𝐍", ".join", "In a group, the current group becomes the target. In a DM or Saved Messages, provide a target group ID. The source is your configured source group.", "Examples: send .join in the target group, or .join -1002222222222 in Saved Messages."),
@@ -116,7 +118,7 @@ async def command_detail_button(q: CallbackQuery):
         return
     title, syntax, purpose, example = detail
     text = title + "\n\n<b>Syntax:</b> <code>" + html.escape(syntax) + "</code>\n\n<b>Use:</b> " + html.escape(purpose) + "\n\n<b>Example:</b> <code>" + html.escape(example) + "</code>"
-    category = "help" if key in ("host", "unhost", "cancel", "reset", "privategroup", "join", "leave", "dotjoin", "dotleave", "level") else ("eq" if key in ("bass", "treble", "presence", "air") else ("vol" if key in ("db", "gain", "loudmax") else "fx"))
+    category = "help" if key in ("host", "unhost", "cancel", "reset", "privategroup", "status", "join", "leave", "dotjoin", "dotleave", "level") else ("eq" if key in ("bass", "treble", "presence", "air") else ("vol" if key in ("db", "gain", "loudmax") else "fx"))
     await bot_send(q.message.edit_text, text, reply_markup=category_keyboard(category), parse_mode="HTML")
     await q.answer()
 
@@ -145,7 +147,7 @@ async def host_button(q: CallbackQuery):
 @dp.callback_query(F.data.in_({"help", "eq", "vol", "fx"}))
 async def help_button(q: CallbackQuery):
     pages = {
-                "help": "📚 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒\n/host — account host\n/unhost — session/data delete\n/privategroup &lt;group_id&gt; — source group set\n/join &lt;target_id&gt; [source_id] — VC connect\n/leave — VC disconnect\n/reset — reset audio effects\nNew controls: /presence 30, /air 25, /loudmax 90, /stereowide 80, /bitcrush 15, /dominant on, /hostboost 8. Dot versions also work.",
+                "help": "📚 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒\n/status — live groups aur all VC settings dekho\n/host — account host\n/unhost — session/data delete\n/privategroup &lt;group_id&gt; — source group set\n/join &lt;target_id&gt; [source_id] — VC connect\n/leave — VC disconnect\n/reset — reset audio effects\nNew controls: /presence 30, /air 25, /loudmax 90, /stereowide 80, /bitcrush 15, /dominant on, /hostboost 8. Dot versions also work.",
         "eq": "🎚️ 𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑\n/bass &lt;value&gt; / .bass &lt;value&gt; — low frequencies\n/treble &lt;value&gt; / .treble &lt;value&gt; — high frequencies\n/presence 30 / .presence 30 — 2–8 kHz voice cut-through\n/air 25 / .air 25 — 8+ kHz shimmer/air",
         "vol": "🔊 𝐕𝐎𝐋𝐔𝐌𝐄\n/db &lt;value&gt; / .db &lt;value&gt; — dB volume\n/gain &lt;value&gt; / .gain &lt;value&gt; — linear gain\n/level &lt;number&gt; / .level &lt;number&gt; — master profile\n/loudmax 90 / .loudmax 90 — loudness maximizer",
         "fx": "✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒\n/echo &lt;value&gt; / .echo &lt;value&gt; — echo\n/distortion &lt;value&gt; / .distortion &lt;value&gt; — saturation\n/stereowide 80 / .stereowide 80 — stereo width\n/bitcrush 15 / .bitcrush 15 — digital texture\n/dominant on|off / .dominant on|off — host-dominant mix\n/hostboost 8 / .hostboost 8 — host voice boost"
@@ -308,6 +310,92 @@ async def command_owner(message: Message):
     except Exception:
         return None
     return int(row["user_id"])
+
+async def _chat_title(client, chat_id):
+    if not chat_id:
+        return "No"
+    try:
+        entity = await client.get_entity(int(chat_id))
+        return getattr(entity, "title", None) or getattr(entity, "first_name", None) or getattr(entity, "username", None) or str(chat_id)
+    except Exception:
+        return "Name unavailable"
+
+
+@dp.message(Command("status"))
+async def status_cmd(message: Message):
+    owner = await command_owner(message)
+    if owner is None:
+        await bot_send(message.reply, "Pehle /host karo; privategroup mein sirf admins /status use kar sakte hain.")
+        return
+
+    row = await storage.get_user(owner) or {}
+    item = manager.hosted.get(owner) or {}
+    bridge = item.get("bridge")
+    active = bool(bridge and bridge.connected)
+    client = item.get("client")
+
+    source_id = int(bridge.source_id) if active else None
+    target_id = int(bridge.target_id) if active else None
+    source_name = await _chat_title(client, source_id) if active and client else "No"
+    target_name = await _chat_title(client, target_id) if active and client else "No"
+
+    private_id = row.get("private_group_id")
+    private_name = "No"
+    if private_id:
+        try:
+            private_chat = await bot.get_chat(int(private_id))
+            private_name = getattr(private_chat, "title", None) or "Name unavailable"
+        except Exception:
+            private_name = "Name unavailable"
+
+    from audio import DEFAULT_EFFECTS
+    effects = {**DEFAULT_EFFECTS, **(row.get("effects") or {})}
+    effect_lines = [
+        ("DB", "db", " dB"), ("GAIN", "gain", "×"), ("LEVEL", "level", ""),
+        ("BASS", "bass", " dB"), ("TREBLE", "treble", " dB"),
+        ("PRESENCE", "presence", " dB"), ("AIR", "air", " dB"),
+        ("ECHO", "echo", "%"), ("DISTORTION", "distortion", "%"),
+        ("LOUDMAX", "loudmax", "%"), ("STEREO WIDE", "stereowide", "%"),
+        ("BITCRUSH", "bitcrush", "%"),
+    ]
+    lines = [
+        "╭━━〔 📊 𝐅𝐋𝐄𝐗𝐈𝐁𝐋𝐄 𝐕𝐂 〕━━╮",
+        "       𝐋𝐈𝐕𝐄 𝐒𝐓𝐀𝐓𝐔𝐒",
+        "╰━━━━━━━━━━━━━━━━━━╯",
+        "",
+        f"🟢 𝐁𝐑𝐈𝐃𝐆𝐄: <b>{'CONNECTED' if active else 'NOT CONNECTED'}</b>",
+        "",
+        "╭─〔 🎯 𝐓𝐀𝐑𝐆𝐄𝐓 𝐆𝐑𝐎𝐔𝐏 〕",
+        f"├ 𝐍𝐚𝐦𝐞: <b>{html.escape(str(target_name))}</b>",
+        f"╰ 𝐈𝐃: <code>{target_id if target_id is not None else 'No'}</code>",
+        "",
+        "╭─〔 🎙️ 𝐒𝐎𝐔𝐑𝐂𝐄 𝐆𝐑𝐎𝐔𝐏 〕",
+        f"├ 𝐍𝐚𝐦𝐞: <b>{html.escape(str(source_name))}</b>",
+        f"╰ 𝐈𝐃: <code>{source_id if source_id is not None else 'No'}</code>",
+        "",
+        "╭─〔 🔐 𝐏𝐑𝐈𝐕𝐀𝐓𝐄 𝐆𝐑𝐎𝐔𝐏 〕",
+        f"├ 𝐍𝐚𝐦𝐞: <b>{html.escape(str(private_name))}</b>",
+        f"╰ 𝐈𝐃: <code>{private_id if private_id else 'No'}</code>",
+        "",
+        "╭─〔 🎚️ 𝐀𝐔𝐃𝐈𝐎 𝐂𝐎𝐍𝐓𝐑𝐎𝐋𝐒 〕",
+    ]
+    for label, key, suffix in effect_lines:
+        value = effects.get(key, DEFAULT_EFFECTS.get(key, 0))
+        if isinstance(value, (int, float)):
+            lines.append(f"├ {label}: <code>{value:g}{suffix}</code>")
+        else:
+            lines.append(f"├ {label}: <code>{html.escape(str(value))}</code>")
+
+    dominant = bridge.dominant if bridge else True
+    host_boost = bridge.host_boost if bridge else 4.0
+    lines.extend([
+        f"├ DOMINANT: <b>{'ON' if dominant else 'OFF'}</b>",
+        f"╰ HOST BOOST: <code>{host_boost:g}×</code>",
+        "",
+        "<i>Settings are current saved values; live-only controls reflect the running bridge/defaults.</i>",
+    ])
+    await bot_send(message.reply, "\n".join(lines), parse_mode="HTML")
+
 
 @dp.message(Command("privategroup"))
 async def privategroup_cmd(message: Message):
