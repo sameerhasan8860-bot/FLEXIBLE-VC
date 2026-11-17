@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101116"><title>FLEXIBLE VC Studio</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script><link rel="stylesheet" href="/mini-app/static/style.css"></head>
+<body><main class="shell">
+<header><div class="brand"><div class="logo">FV</div><div><p class="eyebrow">VOICE CONTROL CENTER</p><h1>FLEXIBLE <span>VC</span></h1></div></div><div class="pill"><i></i><span id="connection">CONNECTING</span></div></header>
+<section class="hero"><div><p class="eyebrow">LIVE AUDIO CONSOLE</p><h2>Your voice.<br><em>Your control.</em></h2><p class="muted">Manage your relay, tune audio and speak directly into the target voice chat.</p></div><div class="orb"><div class="orb-inner">♫</div></div></section>
+<section class="grid two"><article class="panel"><div class="section-head"><div><p class="eyebrow">SOURCE CHANNEL</p><h3 id="source-name">Not configured</h3><small id="source-id">No source group</small></div><span class="tag">SOURCE</span></div></article>
+<article class="panel"><div class="section-head"><div><p class="eyebrow">DESTINATION</p><h3 id="target-name">Not connected</h3><small id="target-id">No target group</small></div><span class="tag green">TARGET</span></div></article></section>
+<section class="panel"><div class="section-head"><div><p class="eyebrow">MICROPHONE STUDIO</p><h3>Live voice transmission</h3></div><span id="mic-state" class="tag">OFFLINE</span></div>
+<p class="muted">Your browser microphone is sent to the current target VC. The source-to-target relay remains active independently.</p>
+<button id="mic-button" class="mic" disabled><span class="mic-icon">🎙</span><span id="mic-label">START LIVE MIC</span></button><p id="mic-note" class="note">Connect a source and target VC first.</p></section>
+<section class="panel"><div class="section-head"><div><p class="eyebrow">AVAILABLE VOICE CHATS</p><h3>Choose target group</h3></div><button id="refresh" class="ghost">↻ Refresh</button></div><div id="groups" class="groups"><div class="empty">Loading active voice chats…</div></div></section>
+<section class="panel"><div class="section-head"><div><p class="eyebrow">SIGNAL PROCESSING</p><h3>Audio controls</h3></div><button id="reset" class="ghost">Reset</button></div><div id="controls" class="controls"></div></section>
+<footer>FLEXIBLE VC · SECURE TELEGRAM SESSION <span id="updated">—</span></footer>
+<div id="toast" role="status"></div></main><script src="/mini-app/static/app.js"></script></body></html>
