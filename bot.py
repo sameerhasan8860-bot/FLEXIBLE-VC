@@ -4,7 +4,7 @@ import re
 import html
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from telethon import TelegramClient, events
 from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, PhoneCodeExpiredError, PasswordHashInvalidError, PhoneNumberInvalidError
 from telethon.sessions import StringSession
@@ -12,6 +12,7 @@ from config import config, validate_config
 from storage import Storage
 from custom_emoji import bot_send
 from manager import HostedManager
+from webapp.server import MiniAppServer
 
 validate_config()
 
@@ -21,6 +22,7 @@ bot = Bot(config.bot_token)
 dp = Dispatcher()
 storage = Storage()
 manager = HostedManager(storage)
+mini_app = MiniAppServer(manager, config.bot_token, config.mini_app_secret or config.session_encryption_key, config.mini_app_url) if config.mini_app_url else None
 pending = {}
 EFFECTS = {"db": "Volume in decibels", "gain": "Linear output gain", "bass": "Low-frequency EQ", "treble": "High-frequency EQ", "echo": "Short feedback echo", "distortion": "Soft saturation effect", "level": "Combined master audio profile"}
 
@@ -30,6 +32,7 @@ def home_keyboard():
         [InlineKeyboardButton(text="𝐇𝐄𝐋𝐏 & 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒", callback_data="help", style="primary", icon_custom_emoji_id="5411513635950325417")],
         [InlineKeyboardButton(text="𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑", callback_data="eq", style="primary", icon_custom_emoji_id="5411636351755905742"), InlineKeyboardButton(text="𝐕𝐎𝐋𝐔𝐌𝐄", callback_data="vol", style="success", icon_custom_emoji_id="5411218262459445111")],
         [InlineKeyboardButton(text="𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒", callback_data="fx", style="danger", icon_custom_emoji_id="5411210419849163902")],
+        *([[InlineKeyboardButton(text="🎛️ 𝐎𝐏𝐄𝐍 𝐌𝐈𝐍𝐈 𝐀𝐏𝐏", web_app=WebAppInfo(url=config.mini_app_url + "/mini-app/"), style="success")]] if config.mini_app_url else []),
         [InlineKeyboardButton(text="𝐃𝐄𝐕𝐄𝐋𝐎𝐏𝐄𝐑", url="https://t.me/SAREEF_FUCKER", style="danger", icon_custom_emoji_id="6091123254842366873")],
     ])
 
@@ -586,10 +589,17 @@ async def main():
     validate_config()
     await storage.initialize()
     await manager.restore_all()
+    if mini_app:
+        await mini_app.start(port=8008)
+        log.info("Mini App public URL: %s/mini-app/", config.mini_app_url)
+    else:
+        log.warning("Mini App is disabled because MINI_APP_URL is not configured.")
     log.info("FLEXIBLE-VC started")
     try:
         await dp.start_polling(bot)
     finally:
+        if mini_app:
+            await mini_app.stop()
         for uid in list(manager.hosted):
             try:
                 await manager.leave(uid)
