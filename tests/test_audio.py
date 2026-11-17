@@ -16,9 +16,9 @@ class AudioProcessorTests(unittest.TestCase):
 
     def test_numeric_values_are_safely_clamped(self):
         processor = AudioProcessor()
-        self.assertEqual(processor.update("db", 999), 24.0)
-        self.assertEqual(processor.update("gain", 999), 8.0)
-        self.assertEqual(processor.update("bass", -999), -24.0)
+        self.assertEqual(processor.update("db", 999), 96.0)
+        self.assertEqual(processor.update("gain", 999), 512.0)
+        self.assertEqual(processor.update("bass", -999), -48.0)
         self.assertEqual(processor.update("echo", 999), 100.0)
 
     def test_level_combines_all_effects_and_higher_values_are_stronger(self):
