@@ -1,4 +1,5 @@
 import logging
+import asyncio
 import numpy as np
 
 from pytgcalls import PyTgCalls, filters
