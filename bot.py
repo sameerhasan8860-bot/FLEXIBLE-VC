@@ -45,21 +45,35 @@ def category_keyboard(category):
             ("/cancel", "cmd:cancel", "danger", "5409326166156799980"),
             ("/reset", "cmd:reset", "danger", "5411472846645914012"),
             ("/level", "cmd:level", "success", "5411200584374056500"),
+            ("/presence", "cmd:presence", "primary", "5411534067109751385"),
+            ("/air", "cmd:air", "primary", "5411558368034712251"),
+            ("/loudmax", "cmd:loudmax", "success", "5411249589950902826"),
+            ("/stereowide", "cmd:stereowide", "primary", "5411472846645914012"),
+            ("/bitcrush", "cmd:bitcrush", "danger", "5411316015915102848"),
+            ("/dominant", "cmd:dominant", "success", "5411218404193363520"),
+            ("/hostboost", "cmd:hostboost", "success", "5411200584374056500"),
             (".join", "cmd:dotjoin", "success", "5411311574918919629"),
             (".leave", "cmd:dotleave", "danger", "5411448605850496427"),
         ],
         "eq": [
             ("/bass", "cmd:bass", "primary", "5411534067109751385"),
             ("/treble", "cmd:treble", "primary", "5411558368034712251"),
+            ("/presence", "cmd:presence", "primary", "5411534067109751385"),
+            ("/air", "cmd:air", "primary", "5411558368034712251"),
         ],
         "vol": [
             ("/db", "cmd:db", "success", "5408854995359524419"),
             ("/gain", "cmd:gain", "success", "5411249589950902826"),
             ("/level", "cmd:level", "danger", "5411200584374056500"),
+            ("/loudmax", "cmd:loudmax", "success", "5411249589950902826"),
         ],
         "fx": [
             ("/echo", "cmd:echo", "primary", "5411472846645914012"),
             ("/distortion", "cmd:distortion", "danger", "5411316015915102848"),
+            ("/stereowide", "cmd:stereowide", "primary", "5411472846645914012"),
+            ("/bitcrush", "cmd:bitcrush", "danger", "5411316015915102848"),
+            ("/dominant", "cmd:dominant", "success", "5411218404193363520"),
+            ("/hostboost", "cmd:hostboost", "success", "5411200584374056500"),
         ],
     }
     rows = [[InlineKeyboardButton(text=label, callback_data=data, style=style, icon_custom_emoji_id=emoji_id)] for label, data, style, emoji_id in commands.get(category, [])]
@@ -83,6 +97,13 @@ COMMAND_DETAILS = {
     "echo": ("🔁 𝐄𝐂𝐇𝐎", "/echo <value>", "Add a short feedback echo. Set 0 to disable.", "Example: /echo 35"),
     "distortion": ("⚡ 𝐃𝐈𝐒𝐓𝐎𝐑𝐓𝐈𝐎𝐍", "/distortion <value>", "Add soft saturation/distortion to the relayed audio.", "Example: /distortion 40"),
     "level": ("🚀 𝐌𝐀𝐒𝐓𝐄𝐑 𝐋𝐄𝐕𝐄𝐋", "/level <number>", "Set a combined master profile that adjusts loudness, gain, bass, treble, echo and distortion together. Higher values produce a stronger profile; the audio engine keeps the actual signal within safe output bounds.", "Examples: /level 1  |  /level 100  |  /level 1000"),
+    "presence": ("🎙️ 𝐏𝐑𝐄𝐒𝐄𝐍𝐂𝐄", "/presence <value>", "Adjust the 2–8 kHz presence band for voice cut-through.", "Example: /presence 30"),
+    "air": ("✨ 𝐀𝐈𝐑", "/air <value>", "Adjust high-frequency shimmer and air above 8 kHz.", "Example: /air 25"),
+    "loudmax": ("🔊 𝐋𝐎𝐔𝐃𝐌𝐀𝐗", "/loudmax <0–100>", "Set the brick-wall loudness maximizer amount.", "Example: /loudmax 90"),
+    "stereowide": ("🎧 𝐒𝐓𝐄𝐑𝐄𝐎 𝐖𝐈𝐃𝐄", "/stereowide <0–100>", "Set stereo width expansion.", "Example: /stereowide 80"),
+    "bitcrush": ("⚡ 𝐁𝐈𝐓𝐂𝐑𝐔𝐒𝐇", "/bitcrush <0–100>", "Add digital bit-crush texture.", "Example: /bitcrush 15"),
+    "dominant": ("👑 𝐃𝐎𝐌𝐈𝐍𝐀𝐍𝐓", "/dominant <on|off>", "Toggle host-dominant mix mode.", "Examples: /dominant on | /dominant off"),
+    "hostboost": ("🚀 𝐇𝐎𝐒𝐓 𝐁𝐎𝐎𝐒𝐓", "/hostboost <multiplier>", "Set host voice boost relative to other speakers.", "Example: /hostboost 8"),
 }
 
 
@@ -95,7 +116,7 @@ async def command_detail_button(q: CallbackQuery):
         return
     title, syntax, purpose, example = detail
     text = title + "\n\n<b>Syntax:</b> <code>" + html.escape(syntax) + "</code>\n\n<b>Use:</b> " + html.escape(purpose) + "\n\n<b>Example:</b> <code>" + html.escape(example) + "</code>"
-    category = "help" if key in ("host", "unhost", "cancel", "reset", "privategroup", "join", "leave", "dotjoin", "dotleave", "level") else ("eq" if key in ("bass", "treble") else ("vol" if key in ("db", "gain") else "fx"))
+    category = "help" if key in ("host", "unhost", "cancel", "reset", "privategroup", "join", "leave", "dotjoin", "dotleave", "level") else ("eq" if key in ("bass", "treble", "presence", "air") else ("vol" if key in ("db", "gain", "loudmax") else "fx"))
     await bot_send(q.message.edit_text, text, reply_markup=category_keyboard(category), parse_mode="HTML")
     await q.answer()
 
@@ -433,7 +454,7 @@ async def text_router(message: Message):
             # phone, OTP, or 2FA input values.
             await bot_send(bot.send_message, uid, "⚠️ 𝐋𝐎𝐆𝐈𝐍 𝐄𝐑𝐑𝐎𝐑\nThodi der baad retry karo ya /cancel use karo.")
         return
-    match = re.match(r"^/(reset|level|db|gain|bass|treble|echo|distortion)(?:\s+(.+))?$", message.text.strip(), re.I)
+    match = re.match(r"^/(reset|level|db|gain|bass|treble|echo|distortion|presence|air|loudmax|stereowide|bitcrush|dominant|hostboost)(?:\s+(.+))?$", message.text.strip(), re.I)
     if not match:
         return
     owner = await command_owner(message)
@@ -448,6 +469,19 @@ async def text_router(message: Message):
                 return
             await manager.reset_effects(owner)
             await bot_send(message.reply, "♻️ 𝐀𝐋𝐋 𝐄𝐅𝐅𝐄𝐂𝐓𝐒 𝐑𝐄𝐒𝐄𝐓\\nAll audio controls original defaults par aa gaye.")
+            return
+        if name in ("dominant", "hostboost"):
+            bridge = manager.hosted.get(owner, {}).get("bridge")
+            if not bridge:
+                raise RuntimeError("Bridge not active.")
+            if name == "dominant":
+                enabled = arg.lower() not in ("0", "off", "false") if arg else True
+                bridge.set_dominant(enabled)
+                await bot_send(message.reply, "👑 DOMINANT MODE: " + ("ON" if enabled else "OFF"))
+            else:
+                multiplier = float(arg.split()[0]) if arg else bridge.host_boost
+                actual = bridge.set_host_boost(multiplier)
+                await bot_send(message.reply, "🚀 HOST BOOST: " + str(actual) + "×")
             return
         if not arg:
             row = await storage.get_user(owner) or {}
