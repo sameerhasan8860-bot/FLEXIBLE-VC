@@ -33,11 +33,40 @@ jobs:
       - name: Install system libraries
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg libopus0 libasound2-dev
+          sudo apt-get install -y ffmpeg libopus0 libasound2-dev curl
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip wheel
           pip install -r requirements.txt
+      - name: Start Cloudflare Quick Tunnel
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 3 -o cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x cloudflared
+          nohup ./cloudflared tunnel --no-autoupdate --url http://127.0.0.1:8008 > cloudflared.log 2>&1 &
+          echo $! > cloudflared.pid
+          for i in {1..45}; do
+            URL="$(grep -oE 'https://[-a-zA-Z0-9]+\.trycloudflare\.com' cloudflared.log | head -n 1 || true)"
+            if [ -n "$URL" ]; then
+              echo "MINI_APP_URL=$URL" >> "$GITHUB_ENV"
+              echo "Mini App tunnel URL: $URL/mini-app/"
+              exit 0
+            fi
+            if ! kill -0 "$(cat cloudflared.pid)" 2>/dev/null; then
+              cat cloudflared.log
+              exit 1
+            fi
+            sleep 2
+          done
+          cat cloudflared.log
+          exit 1
+      - name: Stop Cloudflare Tunnel
+        if: always()
+        run: |
+          if [ -f cloudflared.pid ]; then
+            kill "$(cat cloudflared.pid)" 2>/dev/null || true
+          fi
       - name: Compile Python sources
         run: python -m compileall -q .
       - name: Run audio unit tests
