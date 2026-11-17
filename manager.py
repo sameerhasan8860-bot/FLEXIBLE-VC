@@ -133,6 +133,9 @@ class HostedManager:
             source_auto_start=not source_active,
             target_auto_start=not target_active,
         )
+        saved = await self.storage.get_user(owner_id) or {}
+        bridge.set_dominant(saved.get("dominant", True))
+        bridge.set_host_boost(saved.get("host_boost", 4.0))
         await self.storage.save_user(
             owner_id,
             source_group_id=int(source_id),
@@ -227,6 +230,7 @@ class HostedManager:
         from audio import AudioProcessor, DEFAULT_EFFECTS
         if item.get("bridge"):
             item["bridge"].processor.reset()
+            item["bridge"].live_processor.reset()
         effects = dict(DEFAULT_EFFECTS)
         await self.storage.save_user(owner_id, effects=effects)
         return effects
@@ -245,6 +249,24 @@ class HostedManager:
             actual = processor.update(name, value)
             effects = dict(processor.settings)
         await self.storage.save_user(owner_id, effects=effects)
+        return actual
+
+    async def set_audio_option(self, owner_id: int, name: str, value):
+        item = self.hosted.get(int(owner_id))
+        if not item:
+            raise RuntimeError("Account hosted nahi hai.")
+        bridge = item.get("bridge")
+        if name == "dominant":
+            actual = bool(value)
+            if bridge:
+                bridge.set_dominant(actual)
+        elif name == "host_boost":
+            actual = max(1.0, min(32.0, float(value)))
+            if bridge:
+                bridge.set_host_boost(actual)
+        else:
+            raise ValueError("Unknown audio option")
+        await self.storage.save_user(owner_id, **{name: actual})
         return actual
 
     async def unhost(self, owner_id: int):
