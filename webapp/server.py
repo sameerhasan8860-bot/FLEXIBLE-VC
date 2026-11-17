@@ -24,9 +24,7 @@ class MiniAppServer:
         app.router.add_get("/mini-app/", self.index)
         app.router.add_post("/mini-app/api/auth", self.auth)
         app.router.add_get("/mini-app/api/status", self.status)
-        app.router.add_get("/mini-app/api/groups", self.groups)
         app.router.add_post("/mini-app/api/effects", self.effects)
-        app.router.add_post("/mini-app/api/join", self.join)
         app.router.add_get("/mini-app/api/live", self.live)
         app.router.add_static("/mini-app/static/", STATIC, show_index=False)
         self.runner = web.AppRunner(app, access_log=None)
@@ -89,13 +87,6 @@ class MiniAppServer:
         except (AuthError, Exception) as exc:
             return web.json_response({"ok": False, "error": str(exc)}, status=401 if isinstance(exc, AuthError) else 400)
 
-    async def groups(self, request):
-        try:
-            uid = self.bearer(request)
-            return web.json_response({"ok": True, "groups": await self.manager.list_active_voice_chats(uid)})
-        except Exception as exc:
-            return web.json_response({"ok": False, "error": str(exc)}, status=401)
-
     async def effects(self, request):
         try:
             uid = self.bearer(request); self.hosted(uid)
@@ -107,16 +98,6 @@ class MiniAppServer:
             if not low <= value <= high: raise ValueError(f"{name} must be between {low} and {high}")
             actual = await self.manager.set_effect(uid, name, value)
             return web.json_response({"ok": True, "name": name, "value": actual})
-        except Exception as exc:
-            return web.json_response({"ok": False, "error": str(exc)}, status=400)
-
-    async def join(self, request):
-        try:
-            uid = self.bearer(request); self.hosted(uid)
-            body = await request.json()
-            target = int(body.get("target_id"))
-            result = await self.manager.switch_target(uid, target)
-            return web.json_response({"ok": True, "target": result})
         except Exception as exc:
             return web.json_response({"ok": False, "error": str(exc)}, status=400)
 
