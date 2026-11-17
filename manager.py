@@ -52,6 +52,8 @@ class HostedManager:
 
     async def _register(self, user_id, client, row):
         me = await client.get_me()
+        # Prime Telethon's peer/access-hash cache so numeric -100... chat IDs
+        # supplied by commands can be resolved by the call engine.
         try:
             await client.get_dialogs(limit=None)
         except Exception:
@@ -108,6 +110,8 @@ class HostedManager:
                 f"Already connected. Current target: {target_name} ({bridge.target_id}). Pehle /leave karo."
             )
 
+        # Check both voice chats before creating either connection. If a call
+        # is off, PyTgCalls may start it only when Telegram grants manage_call.
         source_active, source_can_start = await self._call_status(
             item["client"], int(source_id)
         )
@@ -209,6 +213,7 @@ class HostedManager:
                     except Exception:
                         log.exception("Bridge cleanup failed during unhost for %s", owner_id)
                 try:
+                    # Revoke only this hosted Telegram authorization, then close its client.
                     await item["client"].log_out()
                 except Exception:
                     log.exception("Telegram logout failed during unhost for %s", owner_id)
@@ -219,8 +224,12 @@ class HostedManager:
         finally:
             await self.storage.delete_user(owner_id)
 
+
     async def _reply_custom(self, event, text, owner_id):
         item = self.hosted.get(int(owner_id)) or {}
+        # Every dot-command response starts with a random-pool emoji.
+        # Premium hosted accounts render it as a custom animated emoji;
+        # non-Premium accounts keep the normal fallback emoji.
         text = "✨ " + str(text)
         entities = telethon_entities(text, bool(item.get("premium")))
         await event.reply(text, formatting_entities=entities or None)
@@ -229,7 +238,7 @@ class HostedManager:
         import re
         match = re.match(
             r"^\.(join|leave|reset|level|db|gain|bass|treble|echo|distortion"
-            r"|presence|air|loudmax|stereowide|bitcrush|dominant|hostboost|muteglitch)(?:\s+(.+))?$",
+            r"|presence|air|loudmax|stereowide|bitcrush|dominant|hostboost)(?:\s+(.+))?$",
             event.raw_text.strip(), re.I,
         )
         if not match:
@@ -269,24 +278,6 @@ class HostedManager:
                 multiplier = float(argument.split()[0]) if argument else bridge.host_boost
                 actual = bridge.set_host_boost(multiplier)
                 await self._reply_custom(event, f"🚀 𝐇𝐎𝐒𝐓 𝐁𝐎𝐎𝐒𝐓: {actual:g}× (+{20*__import__('math').log10(actual):.1f} dB over others)", owner_id)
-            elif command == "muteglitch":
-                bridge = self.hosted.get(owner_id, {}).get("bridge")
-                if not bridge:
-                    raise RuntimeError("Bridge not active. Pehle .join karo.")
-                enabled = argument.lower() not in ("0", "off", "false") if argument else True
-                bridge.set_muteglitch(enabled)
-                if enabled:
-                    await self._reply_custom(
-                        event,
-                        "👻 𝐌𝐔𝐓𝐄𝐆𝐋𝐈𝐓𝐂𝐇 ON\nTarget VC pe mute hone pe bhi awaaz jaari rahegi.\nAuto-rejoin active hai.",
-                        owner_id,
-                    )
-                else:
-                    await self._reply_custom(
-                        event,
-                        "🔇 𝐌𝐔𝐓𝐄𝐆𝐋𝐈𝐓𝐂𝐇 OFF\nNormal mode. Mute effective hoga.",
-                        owner_id,
-                    )
             else:
                 if not argument:
                     from audio import DEFAULT_EFFECTS
