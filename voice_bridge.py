@@ -32,6 +32,8 @@ class VoiceBridge:
         self.target_id = int(target_id)
         self.processor = AudioProcessor(effects)
         self.live_processor = AudioProcessor(effects)
+        self._processor_lock = asyncio.Lock()
+        self._live_processor_lock = asyncio.Lock()
         self.calls = PyTgCalls(client)
         self.engine_started = False
         self.connected = False
