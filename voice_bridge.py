@@ -121,7 +121,8 @@ class VoiceBridge:
             pcm = np.clip(mixed, -32768, 32767).astype(np.int16).tobytes()
 
             # Full effect chain (gain, EQ, distortion, maximizer…)
-            processed = self.processor.process(pcm)
+            async with self._processor_lock:
+                processed = self.processor.process(pcm)
 
             await self.calls.send_frame(
                 self.target_id,
@@ -130,6 +131,43 @@ class VoiceBridge:
             )
         except Exception:
             log.exception("Audio frame relay failed for source %s", self.source_id)
+
+    async def send_live_frame(self, pcm_mono: bytes) -> bool:
+        """Send one browser-captured 10 ms, 48 kHz mono PCM16 frame to target."""
+        if not self.connected or not pcm_mono or len(pcm_mono) != 960:
+            return False
+        mono = np.frombuffer(pcm_mono, dtype=np.int16)
+        stereo = np.repeat(mono[:, None], 2, axis=1).reshape(-1).tobytes()
+        async with self._processor_lock:
+            processed = self.processor.process(stereo)
+        await self.calls.send_frame(self.target_id, Device.MICROPHONE, processed)
+        return True
+
+    async def switch_target(self, new_target_id: int, auto_start: bool = False):
+        """Switch only the destination VC while keeping the source relay alive."""
+        new_target_id = int(new_target_id)
+        if not self.connected:
+            raise RuntimeError("Source-to-target bridge is not connected.")
+        if new_target_id == self.source_id:
+            raise RuntimeError("Source and target groups must be different.")
+        if new_target_id == self.target_id:
+            return
+        old_target = self.target_id
+        from pytgcalls.types import GroupCallConfig
+        await self.calls.leave_call(old_target)
+        try:
+            await self.calls.play(
+                new_target_id,
+                MediaStream(ExternalMedia.AUDIO, AUDIO),
+                config=GroupCallConfig(auto_start=auto_start),
+            )
+            self.target_id = new_target_id
+        except Exception:
+            try:
+                await self.calls.play(old_target, MediaStream(ExternalMedia.AUDIO, AUDIO))
+            except Exception:
+                log.exception("Could not restore previous target VC %s", old_target)
+            raise
 
     # ── public helpers ──────────────────────────────────────────────────────
     def set_effect(self, name: str, value: float) -> float:
