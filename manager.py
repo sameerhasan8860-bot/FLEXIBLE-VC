@@ -236,7 +236,11 @@ class HostedManager:
 
     async def handle_dot_command(self, owner_id: int, event):
         import re
-        match = re.match(r"^\.(join|leave|reset|level|db|gain|bass|treble|echo|distortion)(?:\s+(.+))?$", event.raw_text.strip(), re.I)
+        match = re.match(
+            r"^\.(join|leave|reset|level|db|gain|bass|treble|echo|distortion"
+            r"|presence|air|loudmax|stereowide|bitcrush|dominant|hostboost)(?:\s+(.+))?$",
+            event.raw_text.strip(), re.I,
+        )
         if not match:
             return
         command, argument = match.group(1).lower(), (match.group(2) or "").strip()
@@ -260,10 +264,24 @@ class HostedManager:
             elif command == "reset":
                 await self.reset_effects(owner_id)
                 await self._reply_custom(event, "♻️ 𝐀𝐋𝐋 𝐄𝐅𝐅𝐄𝐂𝐓𝐒 𝐑𝐄𝐒𝐄𝐓\nAll audio controls original defaults par aa gaye.", owner_id)
+            elif command == "dominant":
+                bridge = self.hosted.get(owner_id, {}).get("bridge")
+                if not bridge:
+                    raise RuntimeError("Bridge not active.")
+                enabled = argument.lower() not in ("0", "off", "false") if argument else True
+                bridge.set_dominant(enabled)
+                await self._reply_custom(event, f"👑 𝐃𝐎𝐌𝐈𝐍𝐀𝐍𝐓 𝐌𝐎𝐃𝐄: {'ON' if enabled else 'OFF'}\nAapki awaaz target VC pe sabse upar rahegi.", owner_id)
+            elif command == "hostboost":
+                bridge = self.hosted.get(owner_id, {}).get("bridge")
+                if not bridge:
+                    raise RuntimeError("Bridge not active.")
+                multiplier = float(argument.split()[0]) if argument else bridge.host_boost
+                actual = bridge.set_host_boost(multiplier)
+                await self._reply_custom(event, f"🚀 𝐇𝐎𝐒𝐓 𝐁𝐎𝐎𝐒𝐓: {actual:g}× (+{20*__import__('math').log10(actual):.1f} dB over others)", owner_id)
             else:
                 if not argument:
                     from audio import DEFAULT_EFFECTS
-                    current = row.get("effects", {}).get(command, DEFAULT_EFFECTS[command])
+                    current = row.get("effects", {}).get(command, DEFAULT_EFFECTS.get(command, 0))
                     await self._reply_custom(event, f"🎚️ 𝐂𝐮𝐫𝐫𝐞𝐧𝐭 {command.upper()}: {current}\nExample: .{command} 10", owner_id)
                     return
                 value = float(argument.split()[0])
