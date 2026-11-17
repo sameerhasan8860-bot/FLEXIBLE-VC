@@ -165,6 +165,50 @@ class HostedManager:
             return active, can_start
         raise RuntimeError("Abhi supergroup/channel voice chats supported hain; basic group check unavailable.")
 
+    async def list_active_voice_chats(self, owner_id: int):
+        """Return active group calls visible to the hosted Telegram account."""
+        item = self.hosted.get(int(owner_id))
+        if not item:
+            raise RuntimeError("Hosted account is not connected.")
+        from telethon import functions, types
+        client = item["client"]
+        dialogs = await client.get_dialogs(limit=None)
+        active = []
+        for dialog in dialogs:
+            entity = dialog.entity
+            if not isinstance(entity, types.Channel) or not getattr(entity, "megagroup", False):
+                continue
+            try:
+                full = await client(functions.channels.GetFullChannelRequest(channel=entity))
+                call = getattr(full.full_chat, "call", None)
+                if call:
+                    active.append({"id": int(dialog.id), "title": str(dialog.title or dialog.id)})
+            except Exception:
+                continue
+        active.sort(key=lambda row: row["title"].casefold())
+        return active
+
+    async def switch_target(self, owner_id: int, target_id: int):
+        item = self.hosted.get(int(owner_id))
+        if not item:
+            raise RuntimeError("Pehle /host se account host karo.")
+        row = await self.storage.get_user(owner_id) or {}
+        bridge = item.get("bridge")
+        if bridge and bridge.connected:
+            if int(target_id) == bridge.source_id:
+                raise RuntimeError("Source group ko target nahi bana sakte.")
+            active, can_start = await self._call_status(item["client"], int(target_id))
+            if not active and not can_start:
+                raise RuntimeError("Selected group ka VC active nahi hai ya hosted account ko start permission nahi hai.")
+            await bridge.switch_target(int(target_id), auto_start=not active)
+            await self.storage.save_user(owner_id, target_group_id=int(target_id), active=True)
+            return {"id": int(target_id), "source_id": bridge.source_id}
+        source_id = row.get("private_group_id") or row.get("source_group_id")
+        if not source_id:
+            raise RuntimeError("Pehle /privategroup se source group set karo ya /join command use karo.")
+        await self.start_bridge(owner_id, int(source_id), int(target_id))
+        return {"id": int(target_id), "source_id": int(source_id)}
+
     async def leave(self, owner_id: int):
         item = self.hosted.get(int(owner_id))
         if not item:
