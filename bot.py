@@ -145,10 +145,10 @@ async def host_button(q: CallbackQuery):
 @dp.callback_query(F.data.in_({"help", "eq", "vol", "fx"}))
 async def help_button(q: CallbackQuery):
     pages = {
-                "help": "📚 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒\n/emoji_pack &lt;package&gt; — fetch all custom emoji details\n/host — account host\n/unhost — apna session/data delete\n/privategroup &lt;group_id&gt; — source group set\n/join &lt;target_id&gt; — configured source se connect\n/join &lt;target_id&gt; &lt;source_id&gt; — direct connect\n/leave — both VCs se disconnect\n\nDot commands hosted account se kahin bhi chalti hain.",
-        "eq": "🎚️ 𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑\n/bass &lt;value&gt; or .bass &lt;value&gt; — low frequencies adjust. Example: .bass 8\n/treble &lt;value&gt; or .treble &lt;value&gt; — high frequencies adjust. Example: .treble 5",
-        "vol": "🔊 𝐕𝐎𝐋𝐔𝐌𝐄\n/db &lt;value&gt; or .db &lt;value&gt; — dB volume. Example: .db 6\n/gain &lt;value&gt; or .gain &lt;value&gt; — linear gain. Example: .gain 1.5\n/level &lt;number&gt; or .level &lt;number&gt; — combined master profile for all audio effects. Example: /level 100",
-        "fx": "✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒\n/echo &lt;value&gt; or .echo &lt;value&gt; — echo amount. Example: .echo 35\n/distortion &lt;value&gt; or .distortion &lt;value&gt; — saturation. Example: .distortion 40",
+                "help": "📚 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒\n/host — account host\n/unhost — session/data delete\n/privategroup &lt;group_id&gt; — source group set\n/join &lt;target_id&gt; [source_id] — VC connect\n/leave — VC disconnect\n/reset — reset audio effects\nNew controls: /presence 30, /air 25, /loudmax 90, /stereowide 80, /bitcrush 15, /dominant on, /hostboost 8. Dot versions also work."
+        "eq": "🎚️ 𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑\n/bass &lt;value&gt; / .bass &lt;value&gt; — low frequencies\n/treble &lt;value&gt; / .treble &lt;value&gt; — high frequencies\n/presence 30 / .presence 30 — 2–8 kHz voice cut-through\n/air 25 / .air 25 — 8+ kHz shimmer/air",
+        "vol": "🔊 𝐕𝐎𝐋𝐔𝐌𝐄\n/db &lt;value&gt; / .db &lt;value&gt; — dB volume\n/gain &lt;value&gt; / .gain &lt;value&gt; — linear gain\n/level &lt;number&gt; / .level &lt;number&gt; — master profile\n/loudmax 90 / .loudmax 90 — loudness maximizer",
+        "fx": "✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒\n/echo &lt;value&gt; / .echo &lt;value&gt; — echo\n/distortion &lt;value&gt; / .distortion &lt;value&gt; — saturation\n/stereowide 80 / .stereowide 80 — stereo width\n/bitcrush 15 / .bitcrush 15 — digital texture\n/dominant on|off / .dominant on|off — host-dominant mix\n/hostboost 8 / .hostboost 8 — host voice boost"
     }
     await bot_send(q.message.edit_text, pages[q.data], reply_markup=category_keyboard(q.data))
     await q.answer()
