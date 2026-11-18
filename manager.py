@@ -334,7 +334,7 @@ class HostedManager:
                 await self._reply_custom(event, "🛑 𝖵𝖢 𝖡𝗋𝗂𝖽𝗀𝖾 𝖣𝗂𝗌𝖼𝗈𝗇𝗇𝖾𝖼𝗍𝖾𝖽\nSource aur target dono voice chats se leave ho gaya.", owner_id)
             elif command == "reset":
                 await self.reset_effects(owner_id)
-                await self._reply_custom(event, "♻️ 𝐀𝐋𝐋 𝐄𝐅𝐅𝐄𝐂𝐓𝐒 𝐑𝐄𝐒𝐄𝐓\nAll audio controls original defaults par aa gaye.", owner_id)
+                await self._reply_custom(event, "♻️ 𝖠𝗎𝖽𝗂𝗈 𝖤𝖿𝖿𝖾𝖼𝗍𝗌 𝖱𝖾𝗌𝖾𝗍\nAll audio controls default settings par aa gaye.", owner_id)
             elif command == "dominant":
                 bridge = self.hosted.get(owner_id, {}).get("bridge")
                 if not bridge:
