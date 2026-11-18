@@ -135,12 +135,7 @@ async def command_detail_button(q: CallbackQuery):
         "╰━━━━━━━━━━━━━━━━━━╯\\n\\n"
         "<i>Use the buttons below to explore more commands.</i>"
     )
-    detail_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📚 𝐀𝐋𝐋 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒", callback_data="all_commands", style="success")],
-        [InlineKeyboardButton(text="↩ 𝐁𝐀𝐂𝐊 𝐓𝐎 𝐂𝐀𝐓𝐄𝐆𝐎𝐑𝐘", callback_data=f"page:{category}", style="primary")],
-        [InlineKeyboardButton(text="⌂ 𝐇𝐎𝐌𝐄", callback_data="home", style="primary")],
-    ])
-    await bot_send(q.message.edit_text, text, reply_markup=detail_keyboard, parse_mode="HTML")
+    await bot_send(q.message.edit_text, text, reply_markup=category_keyboard(category), parse_mode="HTML")
     await q.answer()
 
 HOME_TEXT = "╭━━〔 ✨ 𝐅𝐋𝐄𝐗𝐈𝐁𝐋𝐄 𝐕𝐂 〕━━╮\n  𝐋𝐢𝐯𝐞 𝐕𝐨𝐢𝐜𝐞 𝐂𝐡𝐚𝐭 𝐁𝐫𝐢𝐝𝐠𝐞\n╰━━━━━━━━━━━━━━━━━━╯\n\n🎧 Source VC ki mixed live audio target VC mein relay karo.\n\n👇 Start karne ke liye option select karo."
