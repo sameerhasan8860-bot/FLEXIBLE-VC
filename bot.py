@@ -122,38 +122,23 @@ async def command_detail_button(q: CallbackQuery):
         return
     title, syntax, purpose, example = detail
     category = "help" if key in ("host", "unhost", "cancel", "reset", "privategroup", "status", "join", "leave", "dotjoin", "dotleave", "level") else ("eq" if key in ("bass", "treble", "presence", "air") else ("vol" if key in ("db", "gain", "loudmax") else "fx"))
-    command_cell = syntax
-    description = f"{purpose} Usage: {syntax}. Example: {example}"
-    command_width = 23
-    description_width = 35
-
-    def table_row(left, right):
-        left_lines = textwrap.wrap(left, width=command_width) or [""]
-        right_lines = textwrap.wrap(right, width=description_width) or [""]
-        height = max(len(left_lines), len(right_lines))
-        rendered = []
-        for index in range(height):
-            left_part = left_lines[index] if index < len(left_lines) else ""
-            right_part = right_lines[index] if index < len(right_lines) else ""
-            rendered.append(f"│ {left_part:<{command_width}} │ {right_part:<{description_width}} │")
-        return rendered
-
-    border = "┌" + "─" * 25 + "┬" + "─" * 37 + "┐"
-    middle = "├" + "─" * 25 + "┼" + "─" * 37 + "┤"
-    bottom = "└" + "─" * 25 + "┴" + "─" * 37 + "┘"
-    table_lines = [
-        border,
-        *table_row("Command", "Description"),
-        middle,
-        *table_row(command_cell, description),
-        bottom,
-    ]
     section = "System" if category == "help" else ("Equalizer" if category == "eq" else ("Volume" if category == "vol" else "Audio Effects"))
+    command_name = html.escape(syntax)
+    description_text = html.escape(purpose)
+    usage_text = html.escape(syntax)
+    example_text = html.escape(example)
     text = (
         f"<b>{html.escape(section)} Commands</b>\\n"
-        "Command details and instructions for using this feature.\\n\\n"
+        "Commands and instructions for using this feature.\\n\\n"
         f"<b>⌃  {html.escape(section)}</b>\\n"
-        f"<pre>{html.escape(chr(10).join(table_lines))}</pre>\\n"
+        "┌──────────────────────┬────────────────────────────────┐\\n"
+        "<b>│ Command              │ Description</b>\\n"
+        "├──────────────────────┼────────────────────────────────┤\\n"
+        f"│ <code>{command_name}</code>\\n"
+        f"│ <b>{description_text}</b>\\n"
+        f"│ <i>Usage:</i> <code>{usage_text}</code>\\n"
+        f"│ <i>Example:</i> <code>{example_text}</code>\\n"
+        "└──────────────────────┴────────────────────────────────┘\\n\\n"
         "<i>Use the buttons below to go back.</i>"
     )
     await bot_send(q.message.edit_text, text, reply_markup=category_keyboard(category), parse_mode="HTML")
