@@ -198,7 +198,12 @@ async def help_button(q: CallbackQuery):
         "vol": "🔊 𝐕𝐎𝐋𝐔𝐌𝐄\\n/db &lt;value&gt; / .db &lt;value&gt; — dB volume\\n/gain &lt;value&gt; / .gain &lt;value&gt; — linear gain\\n/level &lt;number&gt; / .level &lt;number&gt; — master profile\\n/loudmax 90 / .loudmax 90 — loudness maximizer",
         "fx": "✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒\\n/echo &lt;value&gt; / .echo &lt;value&gt; — echo\\n/distortion &lt;value&gt; / .distortion &lt;value&gt; — saturation\\n/stereowide 80 / .stereowide 80 — stereo width\\n/bitcrush 15 / .bitcrush 15 — digital texture\\n/dominant on|off / .dominant on|off — host-dominant mix\\n/hostboost 8 / .hostboost 8 — host voice boost"
     }
-    await bot_send(q.message.edit_text, pages[q.data], reply_markup=category_keyboard(q.data))
+    await bot_send(
+        q.message.edit_text,
+        pages[q.data],
+        reply_markup=category_keyboard(q.data),
+        **({"parse_mode": "HTML"} if q.data == "help" else {}),
+    )
     await q.answer()
 
 async def begin_host(uid, message):
