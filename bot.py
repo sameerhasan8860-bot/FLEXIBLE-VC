@@ -148,7 +148,7 @@ HOME_TEXT = "╭━━〔 ✨ 𝐅𝐋𝐄𝐗𝐈𝐁𝐋𝐄 𝐕𝐂 〕━�
 
 @dp.message(Command("start"))
 async def start(message: Message):
-    await bot_send(message.answer, HOME_TEXT, reply_markup=home_keyboard(), stylize=True)
+    await bot_send(message.answer, HOME_TEXT, reply_markup=home_keyboard())
 
 
 @dp.callback_query(F.data == "home")
@@ -244,29 +244,23 @@ async def help_button(q: CallbackQuery):
     )
     await q.answer()
 
-async def command_send(method, *args, **kwargs):
-    """Send a command response using the bot's consistent monospace text style."""
-    kwargs["stylize"] = True
-    return await bot_send(method, *args, **kwargs)
-
-
 async def begin_host(uid, message):
     if await storage.get_user(uid):
-        await command_send(message.answer, "Tumhara account pehle se hosted hai. /unhost use karo.")
+        await bot_send(message.answer, "Tumhara account pehle se hosted hai. /unhost use karo.")
         return
     pending[uid] = {"stage": "phone"}
-    await command_send(message.answer, "✦ 𝐇𝐎𝐒𝐓 𝐀𝐂𝐂𝐎𝐔𝐍𝐓\nApna number bhejo.\nExample: +91XXXXXXXXXX\n\nSirf apna account login karo.")
+    await bot_send(message.answer, "✦ 𝐇𝐎𝐒𝐓 𝐀𝐂𝐂𝐎𝐔𝐍𝐓\nApna number bhejo.\nExample: +91XXXXXXXXXX\n\nSirf apna account login karo.")
 
 @dp.message(Command("emoji_pack"))
 async def emoji_pack_cmd(message: Message):
     """Fetch every custom emoji and its metadata from a Telegram addemoji pack."""
     if message.chat.type != "private":
-        await command_send(message.reply, "🔒 /emoji_pack sirf private bot DM mein use karo.")
+        await bot_send(message.reply, "🔒 /emoji_pack sirf private bot DM mein use karo.")
         return
 
     parts = (message.text or "").strip().split(maxsplit=1)
     if len(parts) != 2:
-        await command_send(message.reply, 
+        await bot_send(message.reply, 
             "Usage: <code>/emoji_pack https://t.me/addemoji/Hlo674</code>\n"
             "Pack ka addemoji link ya short name bhejo.",
             parse_mode="HTML",
@@ -280,14 +274,14 @@ async def emoji_pack_cmd(message: Message):
         re.IGNORECASE,
     )
     if not match:
-        await command_send(message.reply, 
+        await bot_send(message.reply, 
             "⚠️ Invalid pack. Example: <code>/emoji_pack https://t.me/addemoji/Hlo674</code>",
             parse_mode="HTML",
         )
         return
 
     pack_name = match.group(1) or match.group(2)
-    status = await command_send(message.answer, f"🔎 <b>{html.escape(pack_name)}</b> pack fetch ho raha hai...", parse_mode="HTML")
+    status = await bot_send(message.answer, f"🔎 <b>{html.escape(pack_name)}</b> pack fetch ho raha hai...", parse_mode="HTML")
     try:
         sticker_set = await bot.get_sticker_set(name=pack_name)
         all_stickers = sticker_set.stickers or []
@@ -298,7 +292,7 @@ async def emoji_pack_cmd(message: Message):
         ]
 
         if not custom_stickers:
-            await command_send(status.edit_text, 
+            await bot_send(status.edit_text, 
                 f"⚠️ <b>{html.escape(sticker_set.title or pack_name)}</b> mein koi Custom Emoji nahi mila. "
                 f"Pack type: <code>{html.escape(str(sticker_set.sticker_type))}</code>",
                 parse_mode="HTML",
@@ -348,11 +342,11 @@ async def emoji_pack_cmd(message: Message):
 
         await status.delete()
         for page_text in pages:
-            await command_send(message.answer, page_text, parse_mode="HTML", disable_web_page_preview=True)
+            await bot_send(message.answer, page_text, parse_mode="HTML", disable_web_page_preview=True)
 
     except Exception as exc:
         log.warning("Emoji pack lookup failed for %s: %s", pack_name, type(exc).__name__)
-        await command_send(status.edit_text, 
+        await bot_send(status.edit_text, 
             "⚠️ Pack fetch nahi hua. Link/name check karo aur ensure karo ki pack public hai."
         )
 
@@ -360,7 +354,7 @@ async def emoji_pack_cmd(message: Message):
 @dp.message(Command("host"))
 async def host_cmd(message: Message):
     if message.chat.type != "private":
-        await command_send(message.reply, "/host sirf private bot DM mein use karo.")
+        await bot_send(message.reply, "/host sirf private bot DM mein use karo.")
         return
     await begin_host(message.from_user.id, message)
 
@@ -375,12 +369,12 @@ async def cancel_host(message: Message):
             await state["client"].disconnect()
         except Exception:
             pass
-    await command_send(message.reply, "🛑 𝐇𝐎𝐒𝐓 𝐂𝐀𝐍𝐂𝐄𝐋𝐋𝐄𝐃\\nLogin process stopped. /host se dobara start karo." )
+    await bot_send(message.reply, "🛑 𝐇𝐎𝐒𝐓 𝐂𝐀𝐍𝐂𝐄𝐋𝐋𝐄𝐃\\nLogin process stopped. /host se dobara start karo." )
 
 @dp.message(Command("unhost"))
 async def unhost_cmd(message: Message):
     if message.chat.type != "private":
-        await command_send(message.reply, "/unhost sirf private bot DM mein use karo.")
+        await bot_send(message.reply, "/unhost sirf private bot DM mein use karo.")
         return
     pending_state = pending.pop(message.from_user.id, None)
     if pending_state and pending_state.get("client"):
@@ -389,7 +383,7 @@ async def unhost_cmd(message: Message):
         except Exception:
             log.debug("Pending login client was already closed")
     await manager.unhost(message.from_user.id)
-    await command_send(message.reply, "🧹 𝐔𝐍𝐇𝐎𝐒𝐓 𝐂𝐎𝐌𝐏𝐋𝐄𝐓𝐄 — tumhara session aur MongoDB user data delete ho gaya.")
+    await bot_send(message.reply, "🧹 𝐔𝐍𝐇𝐎𝐒𝐓 𝐂𝐎𝐌𝐏𝐋𝐄𝐓𝐄 — tumhara session aur MongoDB user data delete ho gaya.")
 
 async def command_owner(message: Message):
     if message.chat.type == "private":
@@ -420,7 +414,7 @@ async def _chat_title(client, chat_id):
 async def status_cmd(message: Message):
     owner = await command_owner(message)
     if owner is None:
-        await command_send(message.reply, "Pehle /host karo; privategroup mein sirf admins /status use kar sakte hain.")
+        await bot_send(message.reply, "Pehle /host karo; privategroup mein sirf admins /status use kar sakte hain.")
         return
 
     row = await storage.get_user(owner) or {}
@@ -489,18 +483,18 @@ async def status_cmd(message: Message):
         "",
         "<i>Settings are current saved values; live-only controls reflect the running bridge/defaults.</i>",
     ])
-    await command_send(message.reply, "\n".join(lines), parse_mode="HTML")
+    await bot_send(message.reply, "\n".join(lines), parse_mode="HTML")
 
 
 @dp.message(Command("privategroup"))
 async def privategroup_cmd(message: Message):
     if message.chat.type != "private":
-        await command_send(message.reply, "Is command ko bot ke private DM mein use karo.")
+        await bot_send(message.reply, "Is command ko bot ke private DM mein use karo.")
         return
     row = await storage.get_user(message.from_user.id)
     parts = (message.text or "").split()
     if not row or len(parts) != 2:
-        await command_send(message.reply, "Usage: /privategroup <group_id> — pehle /host karo aur private bot ko group mein admin banao.")
+        await bot_send(message.reply, "Usage: /privategroup <group_id> — pehle /host karo aur private bot ko group mein admin banao.")
         return
     try:
         gid = int(parts[1])
@@ -510,16 +504,16 @@ async def privategroup_cmd(message: Message):
             raise RuntimeError("Private bot ko source group mein admin banao.")
         await manager.hosted[message.from_user.id]["client"].get_entity(gid)
         await storage.save_user(message.from_user.id, private_group_id=gid, source_group_id=gid)
-        await command_send(message.reply, "🔐 𝐏𝐑𝐈𝐕𝐀𝐓𝐄 𝐆𝐑𝐎𝐔𝐏 𝐒𝐄𝐓\nSource: " + str(gid))
+        await bot_send(message.reply, "🔐 𝐏𝐑𝐈𝐕𝐀𝐓𝐄 𝐆𝐑𝐎𝐔𝐏 𝐒𝐄𝐓\nSource: " + str(gid))
     except Exception as exc:
-        await command_send(message.reply, "⚠️ " + str(exc))
+        await bot_send(message.reply, "⚠️ " + str(exc))
 
 @dp.message(Command("join"))
 async def join_cmd(message: Message):
     owner = await command_owner(message)
     parts = (message.text or "").split()
     if owner is None or len(parts) not in (2, 3):
-        await command_send(message.reply, "Usage: /join <target_id> [source_id]. Privategroup mein sirf admins use kar sakte hain.")
+        await bot_send(message.reply, "Usage: /join <target_id> [source_id]. Privategroup mein sirf admins use kar sakte hain.")
         return
     try:
         row = await storage.get_user(owner) or {}
@@ -530,18 +524,18 @@ async def join_cmd(message: Message):
         if len(parts) == 3 and not row.get("private_group_id"):
             await storage.save_user(owner, source_group_id=source)
         await manager.start_bridge(owner, source, target)
-        await command_send(message.reply, "🔊 𝐕𝐂 𝐁𝐑𝐈𝐃𝐆𝐄 𝐀𝐂𝐓𝐈𝐕𝐄\nSource: " + str(source) + "\nTarget: " + str(target))
+        await bot_send(message.reply, "🔊 𝐕𝐂 𝐁𝐑𝐈𝐃𝐆𝐄 𝐀𝐂𝐓𝐈𝐕𝐄\nSource: " + str(source) + "\nTarget: " + str(target))
     except Exception as exc:
-        await command_send(message.reply, "⚠️ " + str(exc))
+        await bot_send(message.reply, "⚠️ " + str(exc))
 
 @dp.message(Command("leave"))
 async def leave_cmd(message: Message):
     owner = await command_owner(message)
     if owner is None:
-        await command_send(message.reply, "Hosted user ya privategroup admin access required.")
+        await bot_send(message.reply, "Hosted user ya privategroup admin access required.")
         return
     await manager.leave(owner)
-    await command_send(message.reply, "🛑 Source aur target dono VC se leave ho gaya.")
+    await bot_send(message.reply, "🛑 Source aur target dono VC se leave ho gaya.")
 
 @dp.message()
 async def text_router(message: Message):
@@ -558,7 +552,7 @@ async def text_router(message: Message):
         try:
             if stage == "phone":
                 if not re.fullmatch(r"\+?[1-9]\d{7,14}", value):
-                    await command_send(bot.send_message, uid, "⚠️ 𝐈𝐧𝐯𝐚𝐥𝐢𝐝 𝐍𝐮𝐦𝐛𝐞𝐫\nCountry code ke saath number bhejo.")
+                    await bot_send(bot.send_message, uid, "⚠️ 𝐈𝐧𝐯𝐚𝐥𝐢𝐝 𝐍𝐮𝐦𝐛𝐞𝐫\nCountry code ke saath number bhejo.")
                     return
                 client = TelegramClient(StringSession(), config.api_id, config.api_hash)
                 await client.connect()
@@ -567,13 +561,13 @@ async def text_router(message: Message):
                 except Exception:
                     await client.disconnect()
                     log.warning("Telegram code request failed for user %s", uid)
-                    await command_send(bot.send_message, uid, "⚠️ 𝐎𝐓𝐏 𝐒𝐄𝐍𝐃 𝐍𝐎𝐓 𝐒𝐄𝐍𝐓\nNumber check karke dobara bhejo.")
+                    await bot_send(bot.send_message, uid, "⚠️ 𝐎𝐓𝐏 𝐒𝐄𝐍𝐃 𝐍𝐎𝐓 𝐒𝐄𝐍𝐓\nNumber check karke dobara bhejo.")
                     return
                 pending[uid] = {
                     "stage": "code", "client": client, "phone": value,
                     "hash": sent.phone_code_hash, "attempts": 0,
                 }
-                await command_send(bot.send_message, uid, "✉️ 𝐄𝐍𝐓𝐄𝐑 𝐎𝐓𝐏\nOTP spaces ke saath bhejo. Example: 1 2 3 4 5 (3 attempts).")
+                await bot_send(bot.send_message, uid, "✉️ 𝐄𝐍𝐓𝐄𝐑 𝐎𝐓𝐏\nOTP spaces ke saath bhejo. Example: 1 2 3 4 5 (3 attempts).")
                 return
 
             if stage == "code":
@@ -587,7 +581,7 @@ async def text_router(message: Message):
                 except SessionPasswordNeededError:
                     state["stage"] = "password"
                     state["attempts"] = 0
-                    await command_send(bot.send_message, uid, "🔐 𝐄𝐍𝐓𝐄𝐑 𝟐𝐅𝐀\nAccount password bhejo. (3 attempts)")
+                    await bot_send(bot.send_message, uid, "🔐 𝐄𝐍𝐓𝐄𝐑 𝟐𝐅𝐀\nAccount password bhejo. (3 attempts)")
                     return
                 except PhoneCodeInvalidError:
                     state["attempts"] = state.get("attempts", 0) + 1
@@ -595,14 +589,14 @@ async def text_router(message: Message):
                     if left <= 0:
                         await state["client"].disconnect()
                         pending.pop(uid, None)
-                        await command_send(bot.send_message, uid, "⛔ 𝐋𝐎𝐆𝐈𝐍 𝐂𝐋𝐎𝐒𝐄𝐃\n3 wrong OTP attempts. /host se restart karo.")
+                        await bot_send(bot.send_message, uid, "⛔ 𝐋𝐎𝐆𝐈𝐍 𝐂𝐋𝐎𝐒𝐄𝐃\n3 wrong OTP attempts. /host se restart karo.")
                     else:
-                        await command_send(bot.send_message, uid, f"⚠️ 𝐖𝐑𝐎𝐍𝐆 𝐎𝐓𝐏\n{left} attempts left. Dobara OTP bhejo (spaces ke saath).")
+                        await bot_send(bot.send_message, uid, f"⚠️ 𝐖𝐑𝐎𝐍𝐆 𝐎𝐓𝐏\n{left} attempts left. Dobara OTP bhejo (spaces ke saath).")
                     return
                 except PhoneCodeExpiredError:
                     await state["client"].disconnect()
                     pending.pop(uid, None)
-                    await command_send(bot.send_message, uid, "⌛ 𝐎𝐓𝐏 𝐄𝐗𝐏𝐈𝐑𝐄𝐃\n/host se dobara start karo.")
+                    await bot_send(bot.send_message, uid, "⌛ 𝐎𝐓𝐏 𝐄𝐗𝐏𝐈𝐑𝐄𝐃\n/host se dobara start karo.")
                     return
                 client = state["client"]
 
@@ -615,43 +609,43 @@ async def text_router(message: Message):
                     if left <= 0:
                         await state["client"].disconnect()
                         pending.pop(uid, None)
-                        await command_send(bot.send_message, uid, "⛔ 𝐋𝐎𝐆𝐈𝐍 𝐂𝐋𝐎𝐒𝐄𝐃\n3 wrong 2FA attempts. /host se restart karo.")
+                        await bot_send(bot.send_message, uid, "⛔ 𝐋𝐎𝐆𝐈𝐍 𝐂𝐋𝐎𝐒𝐄𝐃\n3 wrong 2FA attempts. /host se restart karo.")
                     else:
-                        await command_send(bot.send_message, uid, f"⚠️ 𝐖𝐑𝐎𝐍𝐆 𝟐𝐅𝐀\n{left} attempts left. Dobara bhejo.")
+                        await bot_send(bot.send_message, uid, f"⚠️ 𝐖𝐑𝐎𝐍𝐆 𝟐𝐅𝐀\n{left} attempts left. Dobara bhejo.")
                     return
                 client = state["client"]
             else:
                 pending.pop(uid, None)
-                await command_send(bot.send_message, uid, "⚠️ Login state reset. /host se restart karo.")
+                await bot_send(bot.send_message, uid, "⚠️ Login state reset. /host se restart karo.")
                 return
 
             await manager.add_authenticated_client(uid, client)
             pending.pop(uid, None)
-            await command_send(bot.send_message, uid, "✅ 𝐀𝐂𝐂𝐎𝐔𝐍𝐓 𝐇𝐎𝐒𝐓𝐄𝐃\nAb /privategroup ya /join use karo.")
+            await bot_send(bot.send_message, uid, "✅ 𝐀𝐂𝐂𝐎𝐔𝐍𝐓 𝐇𝐎𝐒𝐓𝐄𝐃\nAb /privategroup ya /join use karo.")
 
         except PhoneNumberInvalidError:
-            await command_send(bot.send_message, uid, "⚠️ 𝐈𝐍𝐕𝐀𝐋𝐈𝐃 𝐍𝐔𝐌𝐁𝐄𝐑\nCountry code ke saath dobara bhejo.")
+            await bot_send(bot.send_message, uid, "⚠️ 𝐈𝐍𝐕𝐀𝐋𝐈𝐃 𝐍𝐔𝐌𝐁𝐄𝐑\nCountry code ke saath dobara bhejo.")
         except Exception as exc:
             log.warning("Host flow error for user %s at stage %s: %s", uid, stage, type(exc).__name__)
             # Keep the active login state for recoverable errors; never log
             # phone, OTP, or 2FA input values.
-            await command_send(bot.send_message, uid, "⚠️ 𝐋𝐎𝐆𝐈𝐍 𝐄𝐑𝐑𝐎𝐑\nThodi der baad retry karo ya /cancel use karo.")
+            await bot_send(bot.send_message, uid, "⚠️ 𝐋𝐎𝐆𝐈𝐍 𝐄𝐑𝐑𝐎𝐑\nThodi der baad retry karo ya /cancel use karo.")
         return
     match = re.match(r"^/(reset|level|db|gain|bass|treble|echo|distortion|presence|air|loudmax|stereowide|bitcrush|dominant|hostboost)(?:\s+(.+))?$", message.text.strip(), re.I)
     if not match:
         return
     owner = await command_owner(message)
     if owner is None:
-        await command_send(message.reply, "Pehle /host karo; privategroup mein sirf admins commands use kar sakte hain.")
+        await bot_send(message.reply, "Pehle /host karo; privategroup mein sirf admins commands use kar sakte hain.")
         return
     name, arg = match.group(1).lower(), (match.group(2) or "").strip()
     try:
         if name == "reset":
             if arg:
-                await command_send(message.reply, "Usage: /reset")
+                await bot_send(message.reply, "Usage: /reset")
                 return
             await manager.reset_effects(owner)
-            await command_send(message.reply, "♻️ 𝐀𝐋𝐋 𝐄𝐅𝐅𝐄𝐂𝐓𝐒 𝐑𝐄𝐒𝐄𝐓\\nAll audio controls original defaults par aa gaye.")
+            await bot_send(message.reply, "♻️ 𝐀𝐋𝐋 𝐄𝐅𝐅𝐄𝐂𝐓𝐒 𝐑𝐄𝐒𝐄𝐓\\nAll audio controls original defaults par aa gaye.")
             return
         if name in ("dominant", "hostboost"):
             bridge = manager.hosted.get(owner, {}).get("bridge")
@@ -660,22 +654,22 @@ async def text_router(message: Message):
             if name == "dominant":
                 enabled = arg.lower() not in ("0", "off", "false") if arg else True
                 bridge.set_dominant(enabled)
-                await command_send(message.reply, "👑 DOMINANT MODE: " + ("ON" if enabled else "OFF"))
+                await bot_send(message.reply, "👑 DOMINANT MODE: " + ("ON" if enabled else "OFF"))
             else:
                 multiplier = float(arg.split()[0]) if arg else bridge.host_boost
                 actual = bridge.set_host_boost(multiplier)
-                await command_send(message.reply, "🚀 HOST BOOST: " + str(actual) + "×")
+                await bot_send(message.reply, "🚀 HOST BOOST: " + str(actual) + "×")
             return
         if not arg:
             row = await storage.get_user(owner) or {}
             from audio import DEFAULT_EFFECTS
             value = row.get("effects", {}).get(name, DEFAULT_EFFECTS[name])
-            await command_send(message.reply, name.upper() + " current: " + str(value) + "\nExample: /" + name + " 10")
+            await bot_send(message.reply, name.upper() + " current: " + str(value) + "\nExample: /" + name + " 10")
             return
         value = await manager.set_effect(owner, name, float(arg.split()[0]))
-        await command_send(message.reply, "✅ " + name.upper() + " set: " + str(value))
+        await bot_send(message.reply, "✅ " + name.upper() + " set: " + str(value))
     except Exception as exc:
-        await command_send(message.reply, "⚠️ " + str(exc))
+        await bot_send(message.reply, "⚠️ " + str(exc))
 
 async def main():
     validate_config()
