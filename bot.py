@@ -534,7 +534,8 @@ async def leave_cmd(message: Message):
     await manager.leave(owner)
     await bot_send(message.reply, "🛑 𝖵𝖢 𝖡𝗋𝗂𝖽𝗀𝖾 𝖣𝗂𝗌𝖼𝗈𝗇𝗇𝖾𝖼𝗍𝖾𝖽\nSource aur target dono voice chats se leave ho gaya.")
 @dp.message()
-async def text_router(message: Message):    if not message.from_user or not message.text:
+async def text_router(message: Message):
+    if not message.from_user or not message.text:
         return
     uid = message.from_user.id
     state = pending.get(uid) if message.chat.type == "private" else None
