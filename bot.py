@@ -152,6 +152,37 @@ async def start(message: Message):
     await bot_send(message.answer, HOME_TEXT, reply_markup=home_keyboard())
 
 
+@dp.message(Command("help"))
+async def help_cmd(message: Message):
+    help_text = (
+        "<b>Help &amp; Commands</b>\\n"
+        "Commands available to control your hosted account and voice-chat audio.\\n\\n"
+        "<b>⌃  System</b>\\n\\n"
+        "<b>Command</b>                         <b>Description</b>\\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n"
+        "<code>/host</code>                 Start your Telegram account hosting login.\\n"
+        "<code>/unhost</code>              Disconnect and remove your hosted session.\\n"
+        "<code>/privategroup</code>   Set the source voice-chat group.\\n"
+        "<code>/status</code>               Display source, target and audio settings.\\n"
+        "<code>/join</code>                  Connect the voice-chat bridge.\\n"
+        "<code>/leave</code>                Disconnect from source and target chats.\\n"
+        "<code>/cancel</code>              Stop an active hosting login process.\\n"
+        "<code>/reset</code>                Restore all audio effects to defaults.\\n"
+        "<code>/level</code>                Set the combined master audio profile.\\n"
+        "<code>/presence</code>          Adjust voice presence.\\n"
+        "<code>/air</code>                    Adjust high-frequency air.\\n"
+        "<code>/loudmax</code>            Set loudness maximizer amount.\\n"
+        "<code>/stereowide</code>      Adjust stereo width.\\n"
+        "<code>/bitcrush</code>            Add digital bit-crush texture.\\n"
+        "<code>/dominant</code>          Toggle host-dominant audio mode.\\n"
+        "<code>/hostboost</code>         Adjust host voice boost.\\n"
+        "<code>.join / .leave</code>       Join or leave using dot commands.\\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n"
+        "<i>Use the buttons below to go back.</i>"
+    )
+    await bot_send(message.answer, help_text, reply_markup=category_keyboard("help"), parse_mode="HTML")
+
+
 @dp.callback_query(F.data == "home")
 async def home_button(q: CallbackQuery):
     await bot_send(q.message.edit_text, HOME_TEXT, reply_markup=home_keyboard())
@@ -401,6 +432,22 @@ async def command_owner(message: Message):
         return None
     return int(row["user_id"])
 
+
+HOST_REQUIRED_TEXT = (
+    "✨ 𝖠𝖼𝖼𝗈𝗎𝗇𝗍 𝖭𝗈𝗍 𝖧𝗈𝗌𝗍𝖾𝖽\\n\\n"
+    "Is command ko use karne ke liye pehle\\n"
+    "apna Telegram account host karein.\\n\\n"
+    "Start: /host"
+)
+
+
+async def require_host(message: Message):
+    owner = await command_owner(message)
+    if owner is None or owner not in manager.hosted:
+        await bot_send(message.reply, HOST_REQUIRED_TEXT)
+        return None
+    return owner
+
 async def _chat_title(client, chat_id):
     if not chat_id:
         return "No"
@@ -413,9 +460,8 @@ async def _chat_title(client, chat_id):
 
 @dp.message(Command("status"))
 async def status_cmd(message: Message):
-    owner = await command_owner(message)
+    owner = await require_host(message)
     if owner is None:
-        await bot_send(message.reply, "Pehle /host karo; privategroup mein sirf admins /status use kar sakte hain.")
         return
 
     row = await storage.get_user(owner) or {}
@@ -492,9 +538,12 @@ async def privategroup_cmd(message: Message):
     if message.chat.type != "private":
         await bot_send(message.reply, "Is command ko bot ke private DM mein use karo.")
         return
-    row = await storage.get_user(message.from_user.id)
+    owner = await require_host(message)
+    if owner is None:
+        return
+    row = await storage.get_user(owner)
     parts = (message.text or "").split()
-    if not row or len(parts) != 2:
+    if len(parts) != 2:
         await bot_send(message.reply, "𝖴𝗌𝖺𝗀𝖾\n/privategroup <group_id>\n\nPehle /host karo aur private bot ko source group mein admin banao.")
         return
     try:
@@ -511,9 +560,11 @@ async def privategroup_cmd(message: Message):
 
 @dp.message(Command("join"))
 async def join_cmd(message: Message):
-    owner = await command_owner(message)
+    owner = await require_host(message)
+    if owner is None:
+        return
     parts = (message.text or "").split()
-    if owner is None or len(parts) not in (2, 3):
+    if len(parts) not in (2, 3):
         await bot_send(message.reply, "𝖴𝗌𝖺𝗀𝖾\n/join <target_id> [source_id]\n\n𝖭𝗈𝗍𝖾\nPrivategroup mein sirf admins /join use kar sakte hain.")
         return
     try:
@@ -531,9 +582,8 @@ async def join_cmd(message: Message):
 
 @dp.message(Command("leave"))
 async def leave_cmd(message: Message):
-    owner = await command_owner(message)
+    owner = await require_host(message)
     if owner is None:
-        await bot_send(message.reply, "𝖠𝖼𝖼𝖾𝗌𝗌 𝗇𝗈𝗍 𝖺𝗏𝖺𝗂𝗅𝖺𝖻𝗅𝖾.\nPehle /host karo; privategroup mein sirf admins /leave use kar sakte hain.")
         return
     await manager.leave(owner)
     await bot_send(message.reply, "🛑 𝖵𝖢 𝖡𝗋𝗂𝖽𝗀𝖾 𝖣𝗂𝗌𝖼𝗈𝗇𝗇𝖾𝖼𝗍𝖾𝖽\nSource aur target dono voice chats se leave ho gaya.")
@@ -632,17 +682,20 @@ async def text_router(message: Message):
             # phone, OTP, or 2FA input values.
             await bot_send(bot.send_message, uid, "⚠️ 𝐋𝐎𝐆𝐈𝐍 𝐄𝐑𝐑𝐎𝐑\nThodi der baad retry karo ya /cancel use karo.")
         return
-    help_match = re.fullmatch(r"/help\s+([a-z_]+)", message.text.strip(), re.I)
+    help_match = re.fullmatch(r"/help\\s+([a-z_]+)", message.text.strip(), re.I)
     if help_match:
         help_text = format_command_help(help_match.group(1), "/")
         await bot_send(message.reply, help_text or "Unknown command. Try /help join or /help bass.")
         return
-    match = re.match(r"^/(reset|level|db|gain|bass|treble|echo|distortion|presence|air|loudmax|stereowide|bitcrush|dominant|hostboost)(?:\s+(.+))?$", message.text.strip(), re.I)
+    match = re.match(r"^/(reset|level|db|gain|bass|treble|echo|distortion|presence|air|loudmax|stereowide|bitcrush|dominant|hostboost)(?:\\s+(.+))?$", message.text.strip(), re.I)
     if not match:
+        if message.text.lstrip().startswith("/"):
+            command_name = message.text.strip().split()[0].split("@", 1)[0].lower()
+            if command_name not in {"/start", "/host", "/unhost", "/cancel", "/help"}:
+                await bot_send(message.reply, HOST_REQUIRED_TEXT)
         return
-    owner = await command_owner(message)
+    owner = await require_host(message)
     if owner is None:
-        await bot_send(message.reply, "𝖠𝖼𝖼𝖾𝗌𝗌 𝗇𝗈𝗍 𝖺𝗏𝖺𝗂𝗅𝖺𝖻𝗅𝖾.\nPehle /host karo; privategroup mein sirf admins commands use kar sakte hain.")
         return
     name, arg = match.group(1).lower(), (match.group(2) or "").strip()
     try:
