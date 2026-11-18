@@ -82,8 +82,8 @@ class MiniAppServer:
                 "source": {"id": source_id, "name": await title(source_id)},
                 "target": {"id": target_id, "name": await title(target_id)},
                 "effects": effects,
-                "dominant": bridge.dominant if bridge else True,
-                "host_boost": bridge.host_boost if bridge else 4.0})
+                "dominant": bridge.dominant if bridge else bool(row.get("dominant", True)),
+                "host_boost": bridge.host_boost if bridge else float(row.get("host_boost", 4.0))})
         except (AuthError, Exception) as exc:
             return web.json_response({"ok": False, "error": str(exc)}, status=401 if isinstance(exc, AuthError) else 400)
 
@@ -92,11 +92,19 @@ class MiniAppServer:
             uid = self.bearer(request); self.hosted(uid)
             body = await request.json()
             name = str(body.get("name", "")).lower()
-            if name not in EFFECT_LIMITS: raise ValueError("Unknown audio control")
-            value = float(body.get("value"))
-            low, high = EFFECT_LIMITS[name]
-            if not low <= value <= high: raise ValueError(f"{name} must be between {low} and {high}")
-            actual = await self.manager.set_effect(uid, name, value)
+            if name == "dominant":
+                raw = body.get("value")
+                actual = await self.manager.set_audio_option(uid, "dominant", raw is True or str(raw).lower() in ("1", "true", "on", "yes"))
+            elif name == "host_boost":
+                value = float(body.get("value"))
+                if not 1 <= value <= 32: raise ValueError("Host Boost must be between 1 and 32")
+                actual = await self.manager.set_audio_option(uid, "host_boost", value)
+            else:
+                if name not in EFFECT_LIMITS: raise ValueError("Unknown audio control")
+                value = float(body.get("value"))
+                low, high = EFFECT_LIMITS[name]
+                if not low <= value <= high: raise ValueError("Audio value is out of range")
+                actual = await self.manager.set_effect(uid, name, value)
             return web.json_response({"ok": True, "name": name, "value": actual})
         except Exception as exc:
             return web.json_response({"ok": False, "error": str(exc)}, status=400)
