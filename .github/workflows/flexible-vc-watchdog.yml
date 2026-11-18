@@ -51,5 +51,6 @@ jobs:
           fi
 
           echo "No active FLEXIBLE-VC run. Dispatching recovery run."
-          gh api --method POST "repos/$REPOSITORY/actions/workflows/flexible-vc.yml/dispatches" -f ref=main
+          DEFAULT_BRANCH="$(gh api "repos/$REPOSITORY" --jq .default_branch)"
+          gh api --method POST "repos/$REPOSITORY/actions/workflows/flexible-vc.yml/dispatches" -f "ref=$DEFAULT_BRANCH"
           echo "Recovery dispatch requested."
