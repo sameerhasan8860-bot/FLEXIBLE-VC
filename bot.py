@@ -155,29 +155,29 @@ async def start(message: Message):
 @dp.message(Command("help"))
 async def help_cmd(message: Message):
     help_text = (
-        "<b>Help &amp; Commands</b>\\n"
-        "Commands available to control your hosted account and voice-chat audio.\\n\\n"
-        "<b>⌃  System</b>\\n\\n"
-        "<b>Command</b>                         <b>Description</b>\\n"
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n"
-        "<code>/host</code>                 Start your Telegram account hosting login.\\n"
-        "<code>/unhost</code>              Disconnect and remove your hosted session.\\n"
-        "<code>/privategroup</code>   Set the source voice-chat group.\\n"
-        "<code>/status</code>               Display source, target and audio settings.\\n"
-        "<code>/join</code>                  Connect the voice-chat bridge.\\n"
-        "<code>/leave</code>                Disconnect from source and target chats.\\n"
-        "<code>/cancel</code>              Stop an active hosting login process.\\n"
-        "<code>/reset</code>                Restore all audio effects to defaults.\\n"
-        "<code>/level</code>                Set the combined master audio profile.\\n"
-        "<code>/presence</code>          Adjust voice presence.\\n"
-        "<code>/air</code>                    Adjust high-frequency air.\\n"
-        "<code>/loudmax</code>            Set loudness maximizer amount.\\n"
-        "<code>/stereowide</code>      Adjust stereo width.\\n"
-        "<code>/bitcrush</code>            Add digital bit-crush texture.\\n"
-        "<code>/dominant</code>          Toggle host-dominant audio mode.\\n"
-        "<code>/hostboost</code>         Adjust host voice boost.\\n"
-        "<code>.join / .leave</code>       Join or leave using dot commands.\\n"
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n"
+        "<b>Help &amp; Commands</b>\n"
+        "Commands available to control your hosted account and voice-chat audio.\n\n"
+        "<b>⌃  System</b>\n\n"
+        "<b>Command</b>                         <b>Description</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        "<code>/host</code>                 Start your Telegram account hosting login.\n"
+        "<code>/unhost</code>              Disconnect and remove your hosted session.\n"
+        "<code>/privategroup</code>   Set the source voice-chat group.\n"
+        "<code>/status</code>               Display source, target and audio settings.\n"
+        "<code>/join</code>                  Connect the voice-chat bridge.\n"
+        "<code>/leave</code>                Disconnect from source and target chats.\n"
+        "<code>/cancel</code>              Stop an active hosting login process.\n"
+        "<code>/reset</code>                Restore all audio effects to defaults.\n"
+        "<code>/level</code>                Set the combined master audio profile.\n"
+        "<code>/presence</code>          Adjust voice presence.\n"
+        "<code>/air</code>                    Adjust high-frequency air.\n"
+        "<code>/loudmax</code>            Set loudness maximizer amount.\n"
+        "<code>/stereowide</code>      Adjust stereo width.\n"
+        "<code>/bitcrush</code>            Add digital bit-crush texture.\n"
+        "<code>/dominant</code>          Toggle host-dominant audio mode.\n"
+        "<code>/hostboost</code>         Adjust host voice boost.\n"
+        "<code>.join / .leave</code>       Join or leave using dot commands.\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         "<i>Use the buttons below to go back.</i>"
     )
     await bot_send(message.answer, help_text, reply_markup=category_keyboard("help"), parse_mode="HTML")
@@ -434,9 +434,9 @@ async def command_owner(message: Message):
 
 
 HOST_REQUIRED_TEXT = (
-    "✨ 𝖠𝖼𝖼𝗈𝗎𝗇𝗍 𝖭𝗈𝗍 𝖧𝗈𝗌𝗍𝖾𝖽\\n\\n"
-    "Is command ko use karne ke liye pehle\\n"
-    "apna Telegram account host karein.\\n\\n"
+    "✨ 𝖠𝖼𝖼𝗈𝗎𝗇𝗍 𝖭𝗈𝗍 𝖧𝗈𝗌𝗍𝖾𝖽\n\n"
+    "Is command ko use karne ke liye pehle\n"
+    "apna Telegram account host karein.\n\n"
     "Start: /host"
 )
 
@@ -682,12 +682,12 @@ async def text_router(message: Message):
             # phone, OTP, or 2FA input values.
             await bot_send(bot.send_message, uid, "⚠️ 𝐋𝐎𝐆𝐈𝐍 𝐄𝐑𝐑𝐎𝐑\nThodi der baad retry karo ya /cancel use karo.")
         return
-    help_match = re.fullmatch(r"/help\\s+([a-z_]+)", message.text.strip(), re.I)
+    help_match = re.fullmatch(r"/help\s+([a-z_]+)", message.text.strip(), re.I)
     if help_match:
         help_text = format_command_help(help_match.group(1), "/")
         await bot_send(message.reply, help_text or "Unknown command. Try /help join or /help bass.")
         return
-    match = re.match(r"^/(reset|level|db|gain|bass|treble|echo|distortion|presence|air|loudmax|stereowide|bitcrush|dominant|hostboost)(?:\\s+(.+))?$", message.text.strip(), re.I)
+    match = re.match(r"^/(reset|level|db|gain|bass|treble|echo|distortion|presence|air|loudmax|stereowide|bitcrush|dominant|hostboost)(?:\s+(.+))?$", message.text.strip(), re.I)
     if not match:
         if message.text.lstrip().startswith("/"):
             command_name = message.text.strip().split()[0].split("@", 1)[0].lower()
