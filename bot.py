@@ -154,7 +154,7 @@ async def start(message: Message):
 
 @dp.message(Command("help"))
 async def help_cmd(message: Message):
-    help_match = re.fullmatch(r"/help\\s+([a-z_]+)", message.text.strip(), re.I)
+    help_match = re.fullmatch(r"/help\s+([a-z_]+)", message.text.strip(), re.I)
     if help_match:
         help_text = format_command_help(help_match.group(1), "/")
         await bot_send(message.reply, help_text or "Unknown command. Try /help join or /help bass.")
