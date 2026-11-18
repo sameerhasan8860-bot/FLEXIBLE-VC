@@ -10,6 +10,9 @@
 <section class="panel"><div class="section-head"><div><p class="eyebrow">MICROPHONE STUDIO</p><h3>Live voice transmission</h3></div><span id="mic-state" class="tag">OFFLINE</span></div>
 <p class="muted">Your browser microphone is sent to the current target VC. The source-to-target relay remains active independently.</p>
 <button id="mic-button" class="mic" disabled><span class="mic-icon">🎙</span><span id="mic-label">START LIVE MIC</span></button><p id="mic-note" class="note">Connect a source and target VC first.</p></section>
+<section class="panel"><div class="section-head"><div><p class="eyebrow">VOICE PRIORITY</p><h3>Host audio priority</h3></div><span class="tag green">LIVE MIX</span></div>
+<label class="control"><div class="control-top"><span>Dominant Mode</span><output id="v-dominant">ON</output></div><button id="dominant-toggle" class="ghost" type="button">Turn OFF</button><small>Prioritise the hosted speaker in the source mix</small></label>
+<label class="control"><div class="control-top"><span>Host Boost</span><output id="v-hostboost">4×</output></div><input id="hostboost" type="range" min="1" max="32" step="0.5" value="4"><small>1× — 32× · Relative host priority</small></label></section>
 <section class="panel"><div class="section-head"><div><p class="eyebrow">SIGNAL PROCESSING</p><h3>Audio controls</h3></div><button id="reset" class="ghost">Reset</button></div><div id="controls" class="controls"></div></section>
 <footer>FLEXIBLE VC · SECURE TELEGRAM SESSION <span id="updated">—</span></footer>
 <div id="toast" role="status"></div></main><script src="/mini-app/static/app.js"></script></body></html>
