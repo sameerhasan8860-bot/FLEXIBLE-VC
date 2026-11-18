@@ -176,8 +176,7 @@ async def help_button(q: CallbackQuery):
                     "<b>Command</b>                         <b>Description</b>\n"
                     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                     "<code>/host</code>                 Start your Telegram account hosting login.\n"
-                    "<code>/unhost</code>              Disconnect and remove your hosted session.\n"                    "<code>/privategroup</code>   Set the source voice-chat group.\n"
-                    "<code>/status</code>               Display source, target and audio settings.\n"
+                    "<code>/unhost</code>              Disconnect and remove your hosted session.\n"                    "<code>/privategroup</code>   Set the source voice-chat group.\n"                    "<code>/status</code>               Display source, target and audio settings.\n"
                     "<code>/join</code>                  Connect the voice-chat bridge.\n"
                     "<code>/leave</code>                Disconnect from source and target chats.\n"
                     "<code>/cancel</code>              Stop an active hosting login process.\n"
@@ -357,7 +356,6 @@ async def host_cmd(message: Message):
         await bot_send(message.reply, "/host sirf private bot DM mein use karo.")
         return    await begin_host(message.from_user.id, message)
 
-
 @dp.message(Command("cancel"))
 async def cancel_host(message: Message):
     if message.chat.type != "private":
@@ -536,8 +534,7 @@ async def leave_cmd(message: Message):
     await manager.leave(owner)
     await bot_send(message.reply, "🛑 𝖵𝖢 𝖡𝗋𝗂𝖽𝗀𝖾 𝖣𝗂𝗌𝖼𝗈𝗇𝗇𝖾𝖼𝗍𝖾𝖽\nSource aur target dono voice chats se leave ho gaya.")
 @dp.message()
-async def text_router(message: Message):
-    if not message.from_user or not message.text:
+async def text_router(message: Message):    if not message.from_user or not message.text:
         return
     uid = message.from_user.id
     state = pending.get(uid) if message.chat.type == "private" else None
@@ -648,7 +645,7 @@ async def text_router(message: Message):
                 await bot_send(message.reply, "Usage: /reset")
                 return
             await manager.reset_effects(owner)
-            await bot_send(message.reply, "♻️ 𝐀𝐋𝐋 𝐄𝐅𝐅𝐄𝐂𝐓𝐒 𝐑𝐄𝐒𝐄𝐓\\nAll audio controls original defaults par aa gaye.")
+            await bot_send(message.reply, "♻️ 𝖠𝗎𝖽𝗂𝗈 𝖤𝖿𝖿𝖾𝖼𝗍𝗌 𝖱𝖾𝗌𝖾𝗍\nAll audio controls default settings par aa gaye.")
             return
         if name in ("dominant", "hostboost"):
             bridge = manager.hosted.get(owner, {}).get("bridge")
@@ -672,7 +669,7 @@ async def text_router(message: Message):
         value = await manager.set_effect(owner, name, float(arg.split()[0]))
         await bot_send(message.reply, "✅ 𝖠𝗎𝖽𝗂𝗈 " + name.upper() + " 𝗎𝗉𝖽𝖺𝗍𝖾𝖽\nValue: " + str(value))
     except Exception as exc:
-        await bot_send(message.reply, "⚠️ " + str(exc))
+        await bot_send(message.reply, "⚠️ 𝖤𝗋𝗋𝗈𝗋\n\n" + str(exc))
 
 async def main():
     validate_config()
@@ -716,8 +713,7 @@ async def main():
         if mini_app:            await mini_app.stop()
         for uid in list(manager.hosted):
             try:
-                await manager.leave(uid)
-                await manager.hosted[uid]["client"].disconnect()
+                await manager.leave(uid)                await manager.hosted[uid]["client"].disconnect()
             except Exception:
                 log.exception("Shutdown cleanup failed for %s", uid)
         await storage.close()
