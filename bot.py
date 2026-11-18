@@ -5,7 +5,7 @@ import html
 import textwrap
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo, BotCommand, MenuButtonCommands
 from telethon import TelegramClient, events
 from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, PhoneCodeExpiredError, PasswordHashInvalidError, PhoneNumberInvalidError
 from telethon.sessions import StringSession
@@ -673,6 +673,32 @@ async def text_router(message: Message):
 
 async def main():
     validate_config()
+    await bot.set_my_commands([
+        BotCommand(command="start", description="Open the bot home menu"),
+        BotCommand(command="host", description="Host your Telegram account"),
+        BotCommand(command="unhost", description="Disconnect and remove hosted session"),
+        BotCommand(command="cancel", description="Cancel an active hosting login"),
+        BotCommand(command="privategroup", description="Set the source voice-chat group"),
+        BotCommand(command="status", description="Show bridge, groups and audio settings"),
+        BotCommand(command="join", description="Connect the voice-chat bridge"),
+        BotCommand(command="leave", description="Disconnect the voice-chat bridge"),
+        BotCommand(command="reset", description="Reset all audio effects"),
+        BotCommand(command="level", description="Set the master audio profile"),
+        BotCommand(command="db", description="Set output volume in decibels"),
+        BotCommand(command="gain", description="Adjust linear output gain"),
+        BotCommand(command="bass", description="Adjust low-frequency bass"),
+        BotCommand(command="treble", description="Adjust high-frequency treble"),
+        BotCommand(command="presence", description="Adjust voice presence"),
+        BotCommand(command="air", description="Adjust high-frequency air"),
+        BotCommand(command="echo", description="Set the echo effect"),
+        BotCommand(command="distortion", description="Set saturation and distortion"),
+        BotCommand(command="loudmax", description="Adjust loudness maximizer"),
+        BotCommand(command="stereowide", description="Adjust stereo width"),
+        BotCommand(command="bitcrush", description="Adjust digital bit-crush effect"),
+        BotCommand(command="dominant", description="Toggle host-dominant audio mode"),
+        BotCommand(command="hostboost", description="Adjust host voice boost"),
+    ])
+    await bot.set_chat_menu_button(menu_button=MenuButtonCommands())
     await storage.initialize()
     await manager.restore_all()
     if mini_app:
