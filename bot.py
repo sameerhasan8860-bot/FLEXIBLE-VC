@@ -176,7 +176,9 @@ async def help_button(q: CallbackQuery):
                     "<b>Command</b>                         <b>Description</b>\n"
                     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                     "<code>/host</code>                 Start your Telegram account hosting login.\n"
-                    "<code>/unhost</code>              Disconnect and remove your hosted session.\n"                    "<code>/privategroup</code>   Set the source voice-chat group.\n"                    "<code>/status</code>               Display source, target and audio settings.\n"
+                    "<code>/unhost</code>              Disconnect and remove your hosted session.\n"
+                    "<code>/privategroup</code>   Set the source voice-chat group.\n"
+                    "<code>/status</code>               Display source, target and audio settings.\n"
                     "<code>/join</code>                  Connect the voice-chat bridge.\n"
                     "<code>/leave</code>                Disconnect from source and target chats.\n"
                     "<code>/cancel</code>              Stop an active hosting login process.\n"
@@ -354,7 +356,9 @@ async def emoji_pack_cmd(message: Message):
 async def host_cmd(message: Message):
     if message.chat.type != "private":
         await bot_send(message.reply, "/host sirf private bot DM mein use karo.")
-        return    await begin_host(message.from_user.id, message)
+        return
+    await begin_host(message.from_user.id, message)
+
 
 @dp.message(Command("cancel"))
 async def cancel_host(message: Message):
@@ -491,7 +495,7 @@ async def privategroup_cmd(message: Message):
     row = await storage.get_user(message.from_user.id)
     parts = (message.text or "").split()
     if not row or len(parts) != 2:
-        await bot_send(message.reply, "Usage: /privategroup <group_id> — pehle /host karo aur private bot ko group mein admin banao.")
+        await bot_send(message.reply, "𝖴𝗌𝖺𝗀𝖾\n/privategroup <group_id>\n\nPehle /host karo aur private bot ko source group mein admin banao.")
         return
     try:
         gid = int(parts[1])
@@ -501,7 +505,7 @@ async def privategroup_cmd(message: Message):
             raise RuntimeError("Private bot ko source group mein admin banao.")
         await manager.hosted[message.from_user.id]["client"].get_entity(gid)
         await storage.save_user(message.from_user.id, private_group_id=gid, source_group_id=gid)
-        await bot_send(message.reply, "🔐 𝐏𝐑𝐈𝐕𝐀𝐓𝐄 𝐆𝐑𝐎𝐔𝐏 𝐒𝐄𝐓\nSource: " + str(gid))
+        await bot_send(message.reply, "🔐 𝖲𝗈𝗎𝗋𝖼𝖾 𝖦𝗋𝗈𝗎𝗉 𝖲𝖾𝗍\nGroup ID: " + str(gid))
     except Exception as exc:
         await bot_send(message.reply, "⚠️ " + str(exc))
 
@@ -533,6 +537,7 @@ async def leave_cmd(message: Message):
         return
     await manager.leave(owner)
     await bot_send(message.reply, "🛑 𝖵𝖢 𝖡𝗋𝗂𝖽𝗀𝖾 𝖣𝗂𝗌𝖼𝗈𝗇𝗇𝖾𝖼𝗍𝖾𝖽\nSource aur target dono voice chats se leave ho gaya.")
+
 @dp.message()
 async def text_router(message: Message):
     if not message.from_user or not message.text:
@@ -711,10 +716,12 @@ async def main():
     try:
         await dp.start_polling(bot)
     finally:
-        if mini_app:            await mini_app.stop()
+        if mini_app:
+            await mini_app.stop()
         for uid in list(manager.hosted):
             try:
-                await manager.leave(uid)                await manager.hosted[uid]["client"].disconnect()
+                await manager.leave(uid)
+                await manager.hosted[uid]["client"].disconnect()
             except Exception:
                 log.exception("Shutdown cleanup failed for %s", uid)
         await storage.close()
