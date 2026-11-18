@@ -128,17 +128,16 @@ async def command_detail_button(q: CallbackQuery):
     usage_text = html.escape(syntax)
     example_text = html.escape(example)
     text = (
-        f"<b>{html.escape(section)} Commands</b>\\n"
-        "Commands and instructions for using this feature.\\n\\n"
-        f"<b>⌃  {html.escape(section)}</b>\\n"
-        "┌──────────────────────┬────────────────────────────────┐\\n"
-        "<b>│ Command              │ Description</b>\\n"
-        "├──────────────────────┼────────────────────────────────┤\\n"
-        f"│ <code>{command_name}</code>\\n"
-        f"│ <b>{description_text}</b>\\n"
-        f"│ <i>Usage:</i> <code>{usage_text}</code>\\n"
-        f"│ <i>Example:</i> <code>{example_text}</code>\\n"
-        "└──────────────────────┴────────────────────────────────┘\\n\\n"
+        f"<b>{html.escape(section)} Commands</b>\n"
+        "Commands and instructions for using this feature.\n\n"
+        f"<b>⌃  {html.escape(section)}</b>\n"
+        "<b>Command</b>                         <b>Description</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"<code>{command_name}</code>\n"
+        f"{description_text}\n"
+        f"<i>Usage:</i> <code>{usage_text}</code>\n"
+        f"<i>Example:</i> <code>{example_text}</code>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "<i>Use the buttons below to go back.</i>"
     )
     await bot_send(q.message.edit_text, text, reply_markup=category_keyboard(category), parse_mode="HTML")
