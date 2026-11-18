@@ -1,0 +1,56 @@
+name: FLEXIBLE-VC Watchdog
+
+on:
+  workflow_run:
+    workflows: ["FLEXIBLE-VC"]
+    types: [completed]
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: flexible-vc-watchdog
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check bot run and recover when it stopped
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        run: |
+          set -euo pipefail
+          echo "Watchdog event: $EVENT_NAME"
+          if [ "$EVENT_NAME" = "workflow_run" ] && [ "$CONCLUSION" = "failure" ]; then
+            echo "Latest bot run failed. Not auto-looping a broken deployment; inspect its logs."
+            exit 0
+          fi
+
+          ACTIVE="$(gh api "repos/$REPOSITORY/actions/runs?per_page=50" --jq '[.workflow_runs[] | select(.name == "FLEXIBLE-VC" and .status == "in_progress")] | length')"
+          if [ "$ACTIVE" -gt 0 ]; then
+            echo "FLEXIBLE-VC is already running; no action needed."
+            exit 0
+          fi
+
+          LATEST="$(gh api "repos/$REPOSITORY/actions/runs?per_page=20" --jq '[.workflow_runs[] | select(.name == "FLEXIBLE-VC")] | sort_by(.created_at) | last // {}')"
+          CONCLUSION="$(echo "$LATEST" | jq -r '.conclusion // "none"')"
+          CREATED="$(echo "$LATEST" | jq -r '.created_at // empty')"
+          echo "Latest run conclusion: $CONCLUSION; created: $CREATED"
+
+          if [ "$CONCLUSION" = "failure" ]; then
+            echo "Last run failed; manual log review is required before retry."
+            exit 0
+          fi
+
+          echo "No active FLEXIBLE-VC run. Dispatching recovery run."
+          DEFAULT_BRANCH="$(gh api "repos/$REPOSITORY" --jq .default_branch)"
+          gh api --method POST "repos/$REPOSITORY/actions/workflows/flexible-vc.yml/dispatches" -f "ref=$DEFAULT_BRANCH"
+          echo "Recovery dispatch requested."

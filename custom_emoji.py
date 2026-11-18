@@ -33,7 +33,6 @@ async def bot_send(method, text, *args, **kwargs):
         method_args = args
 
     old_parse_mode = kwargs.pop("parse_mode", None)
-
     # Preserve authored HTML only when the caller explicitly requested HTML.
     # Plain command replies are escaped so placeholders like <group_id> cannot
     # break Telegram's HTML parser.
@@ -53,9 +52,10 @@ async def bot_send(method, text, *args, **kwargs):
             raise
         if old_parse_mode is not None:
             kwargs["parse_mode"] = old_parse_mode
+        fallback_text = original
         if is_bot_send_message:
-            return await method(method_args[0], "✨ " + original, *method_args[1:], **kwargs)
-        return await method("✨ " + original, *method_args, **kwargs)
+            return await method(method_args[0], "✨ " + fallback_text, *method_args[1:], **kwargs)
+        return await method("✨ " + fallback_text, *method_args, **kwargs)
 
 def telethon_entities(text, enabled):
     if not enabled:

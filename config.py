@@ -16,6 +16,8 @@ class Config:
     db_name: str = os.getenv("DB_NAME") or "flexible_vc"
     session_encryption_key: str = os.getenv("SESSION_ENCRYPTION_KEY", "")
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
+    mini_app_url: str = os.getenv("MINI_APP_URL", "").rstrip("/")
+    mini_app_secret: str = os.getenv("MINI_APP_SECRET", "")
 
 
 config = Config()

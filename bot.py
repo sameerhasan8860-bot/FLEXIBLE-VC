@@ -2,9 +2,10 @@ import asyncio
 import logging
 import re
 import html
+import textwrap
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo, BotCommand, MenuButtonCommands
 from telethon import TelegramClient, events
 from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, PhoneCodeExpiredError, PasswordHashInvalidError, PhoneNumberInvalidError
 from telethon.sessions import StringSession
@@ -12,6 +13,8 @@ from config import config, validate_config
 from storage import Storage
 from custom_emoji import bot_send
 from manager import HostedManager
+from command_help import format_command_help
+from webapp.server import MiniAppServer
 
 validate_config()
 
@@ -21,6 +24,7 @@ bot = Bot(config.bot_token)
 dp = Dispatcher()
 storage = Storage()
 manager = HostedManager(storage)
+mini_app = MiniAppServer(manager, config.bot_token, config.mini_app_secret or config.session_encryption_key, config.mini_app_url) if config.mini_app_url else None
 pending = {}
 EFFECTS = {"db": "Volume in decibels", "gain": "Linear output gain", "bass": "Low-frequency EQ", "treble": "High-frequency EQ", "echo": "Short feedback echo", "distortion": "Soft saturation effect", "level": "Combined master audio profile"}
 
@@ -30,6 +34,7 @@ def home_keyboard():
         [InlineKeyboardButton(text="𝐇𝐄𝐋𝐏 & 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒", callback_data="help", style="primary", icon_custom_emoji_id="5411513635950325417")],
         [InlineKeyboardButton(text="𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑", callback_data="eq", style="primary", icon_custom_emoji_id="5411636351755905742"), InlineKeyboardButton(text="𝐕𝐎𝐋𝐔𝐌𝐄", callback_data="vol", style="success", icon_custom_emoji_id="5411218262459445111")],
         [InlineKeyboardButton(text="𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒", callback_data="fx", style="danger", icon_custom_emoji_id="5411210419849163902")],
+        *([[InlineKeyboardButton(text="🎛️ 𝐎𝐏𝐄𝐍 𝐌𝐈𝐍𝐈 𝐀𝐏𝐏", web_app=WebAppInfo(url=config.mini_app_url + "/mini-app/"), style="success")]] if config.mini_app_url else []),
         [InlineKeyboardButton(text="𝐃𝐄𝐕𝐄𝐋𝐎𝐏𝐄𝐑", url="https://t.me/SAREEF_FUCKER", style="danger", icon_custom_emoji_id="6091123254842366873")],
     ])
 
@@ -117,8 +122,25 @@ async def command_detail_button(q: CallbackQuery):
         await q.answer("Command detail not found", show_alert=True)
         return
     title, syntax, purpose, example = detail
-    text = title + "\n\n<b>Syntax:</b> <code>" + html.escape(syntax) + "</code>\n\n<b>Use:</b> " + html.escape(purpose) + "\n\n<b>Example:</b> <code>" + html.escape(example) + "</code>"
     category = "help" if key in ("host", "unhost", "cancel", "reset", "privategroup", "status", "join", "leave", "dotjoin", "dotleave", "level") else ("eq" if key in ("bass", "treble", "presence", "air") else ("vol" if key in ("db", "gain", "loudmax") else "fx"))
+    section = "System" if category == "help" else ("Equalizer" if category == "eq" else ("Volume" if category == "vol" else "Audio Effects"))
+    command_name = html.escape(syntax)
+    description_text = html.escape(purpose)
+    usage_text = html.escape(syntax)
+    example_text = html.escape(example)
+    text = (
+        f"<b>{html.escape(section)} Commands</b>\n"
+        "Commands and instructions for using this feature.\n\n"
+        f"<b>⌃  {html.escape(section)}</b>\n"
+        "<b>Command</b>                         <b>Description</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"<code>{command_name}</code>\n"
+        f"{description_text}\n"
+        f"<i>Usage:</i> <code>{usage_text}</code>\n"
+        f"<i>Example:</i> <code>{example_text}</code>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "<i>Use the buttons below to go back.</i>"
+    )
     await bot_send(q.message.edit_text, text, reply_markup=category_keyboard(category), parse_mode="HTML")
     await q.answer()
 
@@ -128,6 +150,42 @@ HOME_TEXT = "╭━━〔 ✨ 𝐅𝐋𝐄𝐗𝐈𝐁𝐋𝐄 𝐕𝐂 〕━�
 @dp.message(Command("start"))
 async def start(message: Message):
     await bot_send(message.answer, HOME_TEXT, reply_markup=home_keyboard())
+
+
+@dp.message(Command("help"))
+async def help_cmd(message: Message):
+    help_match = re.fullmatch(r"/help\s+([a-z_]+)", message.text.strip(), re.I)
+    if help_match:
+        help_text = format_command_help(help_match.group(1), "/")
+        await bot_send(message.reply, help_text or "Unknown command. Try /help join or /help bass.")
+        return
+    help_text = (
+        "<b>Help &amp; Commands</b>\n"
+        "Commands available to control your hosted account and voice-chat audio.\n\n"
+        "<b>⌃  System</b>\n\n"
+        "<b>Command</b>                         <b>Description</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        "<code>/host</code>                 Start your Telegram account hosting login.\n"
+        "<code>/unhost</code>              Disconnect and remove your hosted session.\n"
+        "<code>/privategroup</code>   Set the source voice-chat group.\n"
+        "<code>/status</code>               Display source, target and audio settings.\n"
+        "<code>/join</code>                  Connect the voice-chat bridge.\n"
+        "<code>/leave</code>                Disconnect from source and target chats.\n"
+        "<code>/cancel</code>              Stop an active hosting login process.\n"
+        "<code>/reset</code>                Restore all audio effects to defaults.\n"
+        "<code>/level</code>                Set the combined master audio profile.\n"
+        "<code>/presence</code>          Adjust voice presence.\n"
+        "<code>/air</code>                    Adjust high-frequency air.\n"
+        "<code>/loudmax</code>            Set loudness maximizer amount.\n"
+        "<code>/stereowide</code>      Adjust stereo width.\n"
+        "<code>/bitcrush</code>            Add digital bit-crush texture.\n"
+        "<code>/dominant</code>          Toggle host-dominant audio mode.\n"
+        "<code>/hostboost</code>         Adjust host voice boost.\n"
+        "<code>.join / .leave</code>       Join or leave using dot commands.\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        "<i>Use the buttons below to go back.</i>"
+    )
+    await bot_send(message.answer, help_text, reply_markup=category_keyboard("help"), parse_mode="HTML")
 
 
 @dp.callback_query(F.data == "home")
@@ -147,12 +205,80 @@ async def host_button(q: CallbackQuery):
 @dp.callback_query(F.data.in_({"help", "eq", "vol", "fx"}))
 async def help_button(q: CallbackQuery):
     pages = {
-                "help": "📚 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒\n/status — live groups aur all VC settings dekho\n/host — account host\n/unhost — session/data delete\n/privategroup &lt;group_id&gt; — source group set\n/join &lt;target_id&gt; [source_id] — VC connect\n/leave — VC disconnect\n/reset — reset audio effects\nNew controls: /presence 30, /air 25, /loudmax 90, /stereowide 80, /bitcrush 15, /dominant on, /hostboost 8. Dot versions also work.",
-        "eq": "🎚️ 𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑\n/bass &lt;value&gt; / .bass &lt;value&gt; — low frequencies\n/treble &lt;value&gt; / .treble &lt;value&gt; — high frequencies\n/presence 30 / .presence 30 — 2–8 kHz voice cut-through\n/air 25 / .air 25 — 8+ kHz shimmer/air",
-        "vol": "🔊 𝐕𝐎𝐋𝐔𝐌𝐄\n/db &lt;value&gt; / .db &lt;value&gt; — dB volume\n/gain &lt;value&gt; / .gain &lt;value&gt; — linear gain\n/level &lt;number&gt; / .level &lt;number&gt; — master profile\n/loudmax 90 / .loudmax 90 — loudness maximizer",
-        "fx": "✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒\n/echo &lt;value&gt; / .echo &lt;value&gt; — echo\n/distortion &lt;value&gt; / .distortion &lt;value&gt; — saturation\n/stereowide 80 / .stereowide 80 — stereo width\n/bitcrush 15 / .bitcrush 15 — digital texture\n/dominant on|off / .dominant on|off — host-dominant mix\n/hostboost 8 / .hostboost 8 — host voice boost"
+                "help": (
+                    "<b>Help &amp; Commands</b>\n"
+                    "Commands available to control your hosted account and voice-chat audio.\n\n"
+                    "<b>⌃  System</b>\n\n"
+                    "<b>Command</b>                         <b>Description</b>\n"
+                    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                    "<code>/host</code>                 Start your Telegram account hosting login.\n"
+                    "<code>/unhost</code>              Disconnect and remove your hosted session.\n"
+                    "<code>/privategroup</code>   Set the source voice-chat group.\n"
+                    "<code>/status</code>               Display source, target and audio settings.\n"
+                    "<code>/join</code>                  Connect the voice-chat bridge.\n"
+                    "<code>/leave</code>                Disconnect from source and target chats.\n"
+                    "<code>/cancel</code>              Stop an active hosting login process.\n"
+                    "<code>/reset</code>                Restore all audio effects to defaults.\n"
+                    "<code>/level</code>                Set the combined master audio profile.\n"
+                    "<code>/presence</code>          Adjust voice presence.\n"
+                    "<code>/air</code>                    Adjust high-frequency air.\n"
+                    "<code>/loudmax</code>            Set loudness maximizer amount.\n"
+                    "<code>/stereowide</code>      Adjust stereo width.\n"
+                    "<code>/bitcrush</code>            Add digital bit-crush texture.\n"
+                    "<code>/dominant</code>          Toggle host-dominant audio mode.\n"
+                    "<code>/hostboost</code>         Adjust host voice boost.\n"
+                    "<code>.join / .leave</code>       Join or leave using dot commands.\n"
+                    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                    "<i>Use the buttons below to go back.</i>"
+                ),
+        "eq": (
+            "<b>Equalizer Commands</b>\n"
+            "Commands to shape the tone and clarity of your voice-chat audio.\n\n"
+            "<b>Equalizer</b>\n\n"
+            "<b>Command</b>                         <b>Description</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "<code>/bass</code>                  Adjust low-frequency bass.\n"
+            "<code>/treble</code>               Adjust high-frequency treble.\n"
+            "<code>/presence</code>           Improve voice presence and cut-through in the 2–8 kHz range.\n"
+            "<code>/air</code>                     Add shimmer and air to frequencies above 8 kHz.\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "<i>Use the buttons below to go back.</i>"
+        ),
+        "vol": (
+            "<b>Volume Commands</b>\n"
+            "Commands to control the output level and loudness of your voice-chat audio.\n\n"
+            "<b>Volume</b>\n\n"
+            "<b>Command</b>                         <b>Description</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "<code>/db</code>                      Set output volume in decibels.\n"
+            "<code>/gain</code>                   Adjust linear audio gain.\n"
+            "<code>/level</code>                  Set the combined master audio profile.\n"
+            "<code>/loudmax</code>             Control the loudness maximizer.\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "<i>Use the buttons below to go back.</i>"
+        ),
+        "fx": (
+            "<b>Audio Effects Commands</b>\n"
+            "Commands to add effects and customize your relayed voice-chat audio.\n\n"
+            "<b>Audio Effects</b>\n\n"
+            "<b>Command</b>                         <b>Description</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "<code>/echo</code>                   Add an echo effect.\n"
+            "<code>/distortion</code>          Add saturation and distortion.\n"
+            "<code>/stereowide</code>        Adjust stereo width.\n"
+            "<code>/bitcrush</code>             Add a digital bit-crush texture.\n"
+            "<code>/dominant</code>           Toggle host-dominant audio mode.\n"
+            "<code>/hostboost</code>          Adjust the host voice boost.\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "<i>Use the buttons below to go back.</i>"
+        )
     }
-    await bot_send(q.message.edit_text, pages[q.data], reply_markup=category_keyboard(q.data))
+    await bot_send(
+        q.message.edit_text,
+        pages[q.data],
+        reply_markup=category_keyboard(q.data),
+        parse_mode="HTML",
+    )
     await q.answer()
 
 async def begin_host(uid, message):
@@ -311,6 +437,22 @@ async def command_owner(message: Message):
         return None
     return int(row["user_id"])
 
+
+HOST_REQUIRED_TEXT = (
+    "✨ 𝖠𝖼𝖼𝗈𝗎𝗇𝗍 𝖭𝗈𝗍 𝖧𝗈𝗌𝗍𝖾𝖽\n\n"
+    "Is command ko use karne ke liye pehle\n"
+    "apna Telegram account host karein.\n\n"
+    "Start: /host"
+)
+
+
+async def require_host(message: Message):
+    owner = await command_owner(message)
+    if owner is None or owner not in manager.hosted:
+        await bot_send(message.reply, HOST_REQUIRED_TEXT)
+        return None
+    return owner
+
 async def _chat_title(client, chat_id):
     if not chat_id:
         return "No"
@@ -323,9 +465,8 @@ async def _chat_title(client, chat_id):
 
 @dp.message(Command("status"))
 async def status_cmd(message: Message):
-    owner = await command_owner(message)
+    owner = await require_host(message)
     if owner is None:
-        await bot_send(message.reply, "Pehle /host karo; privategroup mein sirf admins /status use kar sakte hain.")
         return
 
     row = await storage.get_user(owner) or {}
@@ -402,10 +543,13 @@ async def privategroup_cmd(message: Message):
     if message.chat.type != "private":
         await bot_send(message.reply, "Is command ko bot ke private DM mein use karo.")
         return
-    row = await storage.get_user(message.from_user.id)
+    owner = await require_host(message)
+    if owner is None:
+        return
+    row = await storage.get_user(owner)
     parts = (message.text or "").split()
-    if not row or len(parts) != 2:
-        await bot_send(message.reply, "Usage: /privategroup <group_id> — pehle /host karo aur private bot ko group mein admin banao.")
+    if len(parts) != 2:
+        await bot_send(message.reply, "𝖴𝗌𝖺𝗀𝖾\n/privategroup <group_id>\n\nPehle /host karo aur private bot ko source group mein admin banao.")
         return
     try:
         gid = int(parts[1])
@@ -415,38 +559,39 @@ async def privategroup_cmd(message: Message):
             raise RuntimeError("Private bot ko source group mein admin banao.")
         await manager.hosted[message.from_user.id]["client"].get_entity(gid)
         await storage.save_user(message.from_user.id, private_group_id=gid, source_group_id=gid)
-        await bot_send(message.reply, "🔐 𝐏𝐑𝐈𝐕𝐀𝐓𝐄 𝐆𝐑𝐎𝐔𝐏 𝐒𝐄𝐓\nSource: " + str(gid))
+        await bot_send(message.reply, "🔐 𝖲𝗈𝗎𝗋𝖼𝖾 𝖦𝗋𝗈𝗎𝗉 𝖲𝖾𝗍\nGroup ID: " + str(gid))
     except Exception as exc:
         await bot_send(message.reply, "⚠️ " + str(exc))
 
 @dp.message(Command("join"))
 async def join_cmd(message: Message):
-    owner = await command_owner(message)
+    owner = await require_host(message)
+    if owner is None:
+        return
     parts = (message.text or "").split()
-    if owner is None or len(parts) not in (2, 3):
-        await bot_send(message.reply, "Usage: /join <target_id> [source_id]. Privategroup mein sirf admins use kar sakte hain.")
+    if len(parts) not in (2, 3):
+        await bot_send(message.reply, "𝖴𝗌𝖺𝗀𝖾\n/join <target_id> [source_id]\n\n𝖭𝗈𝗍𝖾\nPrivategroup mein sirf admins /join use kar sakte hain.")
         return
     try:
         row = await storage.get_user(owner) or {}
         target = int(parts[1])
         source = int(parts[2]) if len(parts) == 3 else (row.get("private_group_id") or row.get("source_group_id"))
         if not source:
-            raise RuntimeError("Pehle /privategroup <source_id> set karo ya /join <target_id> <source_id> use karo.")
+            raise RuntimeError("𝖲𝗈𝗎𝗋𝖼𝖾 𝗀𝗋𝗈𝗎𝗉 𝗌𝖾𝗍 𝗇𝖺𝗁𝗂 𝗁𝖺𝗂.\n\nPehle /privategroup <source_id> set karo, ya /join <target_id> <source_id> use karo.")
         if len(parts) == 3 and not row.get("private_group_id"):
             await storage.save_user(owner, source_group_id=source)
         await manager.start_bridge(owner, source, target)
-        await bot_send(message.reply, "🔊 𝐕𝐂 𝐁𝐑𝐈𝐃𝐆𝐄 𝐀𝐂𝐓𝐈𝐕𝐄\nSource: " + str(source) + "\nTarget: " + str(target))
+        await bot_send(message.reply, "🔊 𝖵𝖢 𝖡𝗋𝗂𝖽𝗀𝖾 𝖢𝗈𝗇𝗇𝖾𝖼𝗍𝖾𝖽\n\n𝖲𝗈𝗎𝗋𝖼𝖾: " + str(source) + "\n𝖳𝖺𝗋𝗀𝖾𝗍: " + str(target))
     except Exception as exc:
         await bot_send(message.reply, "⚠️ " + str(exc))
 
 @dp.message(Command("leave"))
 async def leave_cmd(message: Message):
-    owner = await command_owner(message)
+    owner = await require_host(message)
     if owner is None:
-        await bot_send(message.reply, "Hosted user ya privategroup admin access required.")
         return
     await manager.leave(owner)
-    await bot_send(message.reply, "🛑 Source aur target dono VC se leave ho gaya.")
+    await bot_send(message.reply, "🛑 𝖵𝖢 𝖡𝗋𝗂𝖽𝗀𝖾 𝖣𝗂𝗌𝖼𝗈𝗇𝗇𝖾𝖼𝗍𝖾𝖽\nSource aur target dono voice chats se leave ho gaya.")
 
 @dp.message()
 async def text_router(message: Message):
@@ -542,12 +687,20 @@ async def text_router(message: Message):
             # phone, OTP, or 2FA input values.
             await bot_send(bot.send_message, uid, "⚠️ 𝐋𝐎𝐆𝐈𝐍 𝐄𝐑𝐑𝐎𝐑\nThodi der baad retry karo ya /cancel use karo.")
         return
+    help_match = re.fullmatch(r"/help\s+([a-z_]+)", message.text.strip(), re.I)
+    if help_match:
+        help_text = format_command_help(help_match.group(1), "/")
+        await bot_send(message.reply, help_text or "Unknown command. Try /help join or /help bass.")
+        return
     match = re.match(r"^/(reset|level|db|gain|bass|treble|echo|distortion|presence|air|loudmax|stereowide|bitcrush|dominant|hostboost)(?:\s+(.+))?$", message.text.strip(), re.I)
     if not match:
+        if message.text.lstrip().startswith("/"):
+            command_name = message.text.strip().split()[0].split("@", 1)[0].lower()
+            if command_name not in {"/start", "/host", "/unhost", "/cancel", "/help"}:
+                await bot_send(message.reply, HOST_REQUIRED_TEXT)
         return
-    owner = await command_owner(message)
+    owner = await require_host(message)
     if owner is None:
-        await bot_send(message.reply, "Pehle /host karo; privategroup mein sirf admins commands use kar sakte hain.")
         return
     name, arg = match.group(1).lower(), (match.group(2) or "").strip()
     try:
@@ -556,7 +709,7 @@ async def text_router(message: Message):
                 await bot_send(message.reply, "Usage: /reset")
                 return
             await manager.reset_effects(owner)
-            await bot_send(message.reply, "♻️ 𝐀𝐋𝐋 𝐄𝐅𝐅𝐄𝐂𝐓𝐒 𝐑𝐄𝐒𝐄𝐓\\nAll audio controls original defaults par aa gaye.")
+            await bot_send(message.reply, "♻️ 𝖠𝗎𝖽𝗂𝗈 𝖤𝖿𝖿𝖾𝖼𝗍𝗌 𝖱𝖾𝗌𝖾𝗍\nAll audio controls default settings par aa gaye.")
             return
         if name in ("dominant", "hostboost"):
             bridge = manager.hosted.get(owner, {}).get("bridge")
@@ -565,31 +718,64 @@ async def text_router(message: Message):
             if name == "dominant":
                 enabled = arg.lower() not in ("0", "off", "false") if arg else True
                 bridge.set_dominant(enabled)
-                await bot_send(message.reply, "👑 DOMINANT MODE: " + ("ON" if enabled else "OFF"))
+                await bot_send(message.reply, "👑 𝖣𝗈𝗆𝗂𝗇𝖺𝗇𝗍 𝖬𝗈𝖽𝖾: " + ("ON" if enabled else "OFF"))
             else:
                 multiplier = float(arg.split()[0]) if arg else bridge.host_boost
                 actual = bridge.set_host_boost(multiplier)
-                await bot_send(message.reply, "🚀 HOST BOOST: " + str(actual) + "×")
+                await bot_send(message.reply, "🚀 𝖧𝗈𝗌𝗍 𝖡𝗈𝗈𝗌𝗍: " + str(actual) + "×")
             return
         if not arg:
             row = await storage.get_user(owner) or {}
             from audio import DEFAULT_EFFECTS
             value = row.get("effects", {}).get(name, DEFAULT_EFFECTS[name])
-            await bot_send(message.reply, name.upper() + " current: " + str(value) + "\nExample: /" + name + " 10")
+            await bot_send(message.reply, "𝖢𝗎𝗋𝗋𝖾𝗇𝗍 " + name.upper() + ": " + str(value) + "\n\n𝖤𝗑𝖺𝗆𝗉𝗅𝖾: /" + name + " 10")
             return
         value = await manager.set_effect(owner, name, float(arg.split()[0]))
-        await bot_send(message.reply, "✅ " + name.upper() + " set: " + str(value))
+        await bot_send(message.reply, "✅ 𝖠𝗎𝖽𝗂𝗈 " + name.upper() + " 𝗎𝗉𝖽𝖺𝗍𝖾𝖽\nValue: " + str(value))
     except Exception as exc:
-        await bot_send(message.reply, "⚠️ " + str(exc))
+        await bot_send(message.reply, "⚠️ 𝖤𝗋𝗋𝗈𝗋\n\n" + str(exc))
 
 async def main():
     validate_config()
+    await bot.set_my_commands([
+        BotCommand(command="start", description="𝐎𝐩𝐞𝐧 𝐭𝐡𝐞 𝐁𝐨𝐭 𝐇𝐨𝐦𝐞 𝐌𝐞𝐧𝐮"),
+        BotCommand(command="host", description="𝐇𝐨𝐬𝐭 𝐘𝐨𝐮𝐫 𝐓𝐞𝐥𝐞𝐠𝐫𝐚𝐦 𝐀𝐜𝐜𝐨𝐮𝐧𝐭"),
+        BotCommand(command="unhost", description="𝐃𝐢𝐬𝐜𝐨𝐧𝐧𝐞𝐜𝐭 𝐚𝐧𝐝 𝐑𝐞𝐦𝐨𝐯𝐞 𝐇𝐨𝐬𝐭𝐞𝐝 𝐒𝐞𝐬𝐬𝐢𝐨𝐧"),
+        BotCommand(command="cancel", description="𝐂𝐚𝐧𝐜𝐞𝐥 𝐀𝐧 𝐀𝐜𝐭𝐢𝐯𝐞 𝐇𝐨𝐬𝐭𝐢𝐧𝐠 𝐋𝐨𝐠𝐢𝐧"),
+        BotCommand(command="privategroup", description="𝐒𝐞𝐭 𝐓𝐡𝐞 𝐒𝐨𝐮𝐫𝐜𝐞 𝐕𝐨𝐢𝐜𝐞 𝐂𝐡𝐚𝐭 𝐆𝐫𝐨𝐮𝐩"),
+        BotCommand(command="status", description="𝐒𝐡𝐨𝐰 𝐁𝐫𝐢𝐝𝐠𝐞, 𝐆𝐫𝐨𝐮𝐩𝐬 𝐚𝐧𝐝 𝐀𝐮𝐝𝐢𝐨 𝐒𝐞𝐭𝐭𝐢𝐧𝐠𝐬"),
+        BotCommand(command="join", description="𝐂𝐨𝐧𝐧𝐞𝐜𝐭 𝐓𝐡𝐞 𝐕𝐨𝐢𝐜𝐞 𝐂𝐡𝐚𝐭 𝐁𝐫𝐢𝐝𝐠𝐞"),
+        BotCommand(command="leave", description="𝐃𝐢𝐬𝐜𝐨𝐧𝐧𝐞𝐜𝐭 𝐓𝐡𝐞 𝐕𝐨𝐢𝐜𝐞 𝐂𝐡𝐚𝐭 𝐁𝐫𝐢𝐝𝐠𝐞"),
+        BotCommand(command="reset", description="𝐑𝐞𝐬𝐞𝐭 𝐀𝐥𝐥 𝐀𝐮𝐝𝐢𝐨 𝐄𝐟𝐟𝐞𝐜𝐭𝐬"),
+        BotCommand(command="level", description="𝐒𝐞𝐭 𝐓𝐡𝐞 𝐌𝐚𝐬𝐭𝐞𝐫 𝐀𝐮𝐝𝐢𝐨 𝐏𝐫𝐨𝐟𝐢𝐥𝐞"),
+        BotCommand(command="db", description="𝐒𝐞𝐭 𝐎𝐮𝐭𝐩𝐮𝐭 𝐕𝐨𝐥𝐮𝐦𝐞 𝐈𝐧 𝐃𝐞𝐜𝐢𝐛𝐞𝐥𝐬"),
+        BotCommand(command="gain", description="𝐀𝐝𝐣𝐮𝐬𝐭 𝐋𝐢𝐧𝐞𝐚𝐫 𝐎𝐮𝐭𝐩𝐮𝐭 𝐆𝐚𝐢𝐧"),
+        BotCommand(command="bass", description="𝐀𝐝𝐣𝐮𝐬𝐭 𝐋𝐨𝐰-𝐅𝐫𝐞𝐪𝐮𝐞𝐧𝐜𝐲 𝐁𝐚𝐬𝐬"),
+        BotCommand(command="treble", description="𝐀𝐝𝐣𝐮𝐬𝐭 𝐇𝐢𝐠𝐡-𝐅𝐫𝐞𝐪𝐮𝐞𝐧𝐜𝐲 𝐓𝐫𝐞𝐛𝐥𝐞"),
+        BotCommand(command="presence", description="𝐈𝐦𝐩𝐫𝐨𝐯𝐞 𝐕𝐨𝐢𝐜𝐞 𝐏𝐫𝐞𝐬𝐞𝐧𝐜𝐞"),
+        BotCommand(command="air", description="𝐀𝐝𝐝 𝐇𝐢𝐠𝐡-𝐅𝐫𝐞𝐪𝐮𝐞𝐧𝐜𝐲 𝐀𝐢𝐫 𝐚𝐧𝐝 𝐒𝐡𝐢𝐦𝐦𝐞𝐫"),
+        BotCommand(command="echo", description="𝐀𝐝𝐝 𝐀𝐧 𝐄𝐜𝐡𝐨 𝐄𝐟𝐟𝐞𝐜𝐭"),
+        BotCommand(command="distortion", description="𝐀𝐝𝐝 𝐒𝐚𝐭𝐮𝐫𝐚𝐭𝐢𝐨𝐧 𝐚𝐧𝐝 𝐃𝐢𝐬𝐭𝐨𝐫𝐭𝐢𝐨𝐧"),
+        BotCommand(command="loudmax", description="𝐀𝐝𝐣𝐮𝐬𝐭 𝐓𝐡𝐞 𝐋𝐨𝐮𝐝𝐧𝐞𝐬𝐬 𝐌𝐚𝐱𝐢𝐦𝐢𝐳𝐞𝐫"),
+        BotCommand(command="stereowide", description="𝐀𝐝𝐣𝐮𝐬𝐭 𝐒𝐭𝐞𝐫𝐞𝐨 𝐖𝐢𝐝𝐭𝐡"),
+        BotCommand(command="bitcrush", description="𝐀𝐝𝐣𝐮𝐬𝐭 𝐓𝐡𝐞 𝐃𝐢𝐠𝐢𝐭𝐚𝐥 𝐁𝐢𝐭-𝐂𝐫𝐮𝐬𝐡 𝐄𝐟𝐟𝐞𝐜𝐭"),
+        BotCommand(command="dominant", description="𝐓𝐨𝐠𝐠𝐥𝐞 𝐇𝐨𝐬𝐭 𝐀𝐮𝐝𝐢𝐨 𝐏𝐫𝐢𝐨𝐫𝐢𝐭𝐲"),
+        BotCommand(command="hostboost", description="𝐀𝐝𝐣𝐮𝐬𝐭 𝐓𝐡𝐞 𝐇𝐨𝐬𝐭 𝐕𝐨𝐢𝐜𝐞 𝐁𝐨𝐨𝐬𝐭"),
+    ])
+    await bot.set_chat_menu_button(menu_button=MenuButtonCommands())
     await storage.initialize()
     await manager.restore_all()
+    if mini_app:
+        await mini_app.start(port=8008)
+        log.info("Mini App public URL: %s/mini-app/", config.mini_app_url)
+    else:
+        log.warning("Mini App is disabled because MINI_APP_URL is not configured.")
     log.info("FLEXIBLE-VC started")
     try:
         await dp.start_polling(bot)
     finally:
+        if mini_app:
+            await mini_app.stop()
         for uid in list(manager.hosted):
             try:
                 await manager.leave(uid)

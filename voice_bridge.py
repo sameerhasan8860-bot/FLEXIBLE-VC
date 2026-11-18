@@ -1,4 +1,5 @@
 import logging
+import asyncio
 import numpy as np
 
 from pytgcalls import PyTgCalls, filters
@@ -30,6 +31,9 @@ class VoiceBridge:
         self.source_id = int(source_id)
         self.target_id = int(target_id)
         self.processor = AudioProcessor(effects)
+        self.live_processor = AudioProcessor(effects)
+        self._processor_lock = asyncio.Lock()
+        self._live_processor_lock = asyncio.Lock()
         self.calls = PyTgCalls(client)
         self.engine_started = False
         self.connected = False
@@ -45,6 +49,7 @@ class VoiceBridge:
         self.source_id = int(source_id)
         self.target_id = int(target_id)
         self.processor = AudioProcessor(effects)
+        self.live_processor = AudioProcessor(effects)
 
     async def connect(self, source_auto_start=False, target_auto_start=False):
         if self.connected:
@@ -121,7 +126,8 @@ class VoiceBridge:
             pcm = np.clip(mixed, -32768, 32767).astype(np.int16).tobytes()
 
             # Full effect chain (gain, EQ, distortion, maximizer…)
-            processed = self.processor.process(pcm)
+            async with self._processor_lock:
+                processed = self.processor.process(pcm)
 
             await self.calls.send_frame(
                 self.target_id,
@@ -131,9 +137,48 @@ class VoiceBridge:
         except Exception:
             log.exception("Audio frame relay failed for source %s", self.source_id)
 
+    async def send_live_frame(self, pcm_mono: bytes) -> bool:
+        """Send one browser-captured 10 ms, 48 kHz mono PCM16 frame to target."""
+        if not self.connected or not pcm_mono or len(pcm_mono) != 960:
+            return False
+        mono = np.frombuffer(pcm_mono, dtype=np.int16)
+        stereo = np.repeat(mono[:, None], 2, axis=1).reshape(-1).tobytes()
+        async with self._live_processor_lock:
+            processed = self.live_processor.process(stereo)
+        await self.calls.send_frame(self.target_id, Device.MICROPHONE, processed)
+        return True
+
+    async def switch_target(self, new_target_id: int, auto_start: bool = False):
+        """Switch only the destination VC while keeping the source relay alive."""
+        new_target_id = int(new_target_id)
+        if not self.connected:
+            raise RuntimeError("Source-to-target bridge is not connected.")
+        if new_target_id == self.source_id:
+            raise RuntimeError("Source and target groups must be different.")
+        if new_target_id == self.target_id:
+            return
+        old_target = self.target_id
+        from pytgcalls.types import GroupCallConfig
+        await self.calls.leave_call(old_target)
+        try:
+            await self.calls.play(
+                new_target_id,
+                MediaStream(ExternalMedia.AUDIO, AUDIO),
+                config=GroupCallConfig(auto_start=auto_start),
+            )
+            self.target_id = new_target_id
+        except Exception:
+            try:
+                await self.calls.play(old_target, MediaStream(ExternalMedia.AUDIO, AUDIO))
+            except Exception:
+                log.exception("Could not restore previous target VC %s", old_target)
+            raise
+
     # ── public helpers ──────────────────────────────────────────────────────
     def set_effect(self, name: str, value: float) -> float:
-        return self.processor.update(name, value)
+        actual = self.processor.update(name, value)
+        self.live_processor.update(name, value)
+        return actual
 
     def set_host_boost(self, multiplier: float) -> float:
         """Adjust how dominant the host is over other speakers (default 4.0)."""
