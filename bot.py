@@ -176,8 +176,7 @@ async def help_button(q: CallbackQuery):
                     "<b>Command</b>                         <b>Description</b>\n"
                     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                     "<code>/host</code>                 Start your Telegram account hosting login.\n"
-                    "<code>/unhost</code>              Disconnect and remove your hosted session.\n"
-                    "<code>/privategroup</code>   Set the source voice-chat group.\n"
+                    "<code>/unhost</code>              Disconnect and remove your hosted session.\n"                    "<code>/privategroup</code>   Set the source voice-chat group.\n"
                     "<code>/status</code>               Display source, target and audio settings.\n"
                     "<code>/join</code>                  Connect the voice-chat bridge.\n"
                     "<code>/leave</code>                Disconnect from source and target chats.\n"
@@ -356,8 +355,7 @@ async def emoji_pack_cmd(message: Message):
 async def host_cmd(message: Message):
     if message.chat.type != "private":
         await bot_send(message.reply, "/host sirf private bot DM mein use karo.")
-        return
-    await begin_host(message.from_user.id, message)
+        return    await begin_host(message.from_user.id, message)
 
 
 @dp.message(Command("cancel"))
@@ -514,18 +512,18 @@ async def join_cmd(message: Message):
     owner = await command_owner(message)
     parts = (message.text or "").split()
     if owner is None or len(parts) not in (2, 3):
-        await bot_send(message.reply, "Usage: /join <target_id> [source_id]. Privategroup mein sirf admins use kar sakte hain.")
+        await bot_send(message.reply, "𝖴𝗌𝖺𝗀𝖾\n/join <target_id> [source_id]\n\n𝖭𝗈𝗍𝖾\nPrivategroup mein sirf admins /join use kar sakte hain.")
         return
     try:
         row = await storage.get_user(owner) or {}
         target = int(parts[1])
         source = int(parts[2]) if len(parts) == 3 else (row.get("private_group_id") or row.get("source_group_id"))
         if not source:
-            raise RuntimeError("Pehle /privategroup <source_id> set karo ya /join <target_id> <source_id> use karo.")
+            raise RuntimeError("𝖲𝗈𝗎𝗋𝖼𝖾 𝗀𝗋𝗈𝗎𝗉 𝗌𝖾𝗍 𝗇𝖺𝗁𝗂 𝗁𝖺𝗂.\n\nPehle /privategroup <source_id> set karo, ya /join <target_id> <source_id> use karo.")
         if len(parts) == 3 and not row.get("private_group_id"):
             await storage.save_user(owner, source_group_id=source)
         await manager.start_bridge(owner, source, target)
-        await bot_send(message.reply, "🔊 𝐕𝐂 𝐁𝐑𝐈𝐃𝐆𝐄 𝐀𝐂𝐓𝐈𝐕𝐄\nSource: " + str(source) + "\nTarget: " + str(target))
+        await bot_send(message.reply, "🔊 𝖵𝖢 𝖡𝗋𝗂𝖽𝗀𝖾 𝖢𝗈𝗇𝗇𝖾𝖼𝗍𝖾𝖽\n\n𝖲𝗈𝗎𝗋𝖼𝖾: " + str(source) + "\n𝖳𝖺𝗋𝗀𝖾𝗍: " + str(target))
     except Exception as exc:
         await bot_send(message.reply, "⚠️ " + str(exc))
 
@@ -533,11 +531,10 @@ async def join_cmd(message: Message):
 async def leave_cmd(message: Message):
     owner = await command_owner(message)
     if owner is None:
-        await bot_send(message.reply, "Hosted user ya privategroup admin access required.")
+        await bot_send(message.reply, "𝖠𝖼𝖼𝖾𝗌𝗌 𝗇𝗈𝗍 𝖺𝗏𝖺𝗂𝗅𝖺𝖻𝗅𝖾.\nPehle /host karo; privategroup mein sirf admins /leave use kar sakte hain.")
         return
     await manager.leave(owner)
-    await bot_send(message.reply, "🛑 Source aur target dono VC se leave ho gaya.")
-
+    await bot_send(message.reply, "🛑 𝖵𝖢 𝖡𝗋𝗂𝖽𝗀𝖾 𝖣𝗂𝗌𝖼𝗈𝗇𝗇𝖾𝖼𝗍𝖾𝖽\nSource aur target dono voice chats se leave ho gaya.")
 @dp.message()
 async def text_router(message: Message):
     if not message.from_user or not message.text:
@@ -642,7 +639,7 @@ async def text_router(message: Message):
         return
     owner = await command_owner(message)
     if owner is None:
-        await bot_send(message.reply, "Pehle /host karo; privategroup mein sirf admins commands use kar sakte hain.")
+        await bot_send(message.reply, "𝖠𝖼𝖼𝖾𝗌𝗌 𝗇𝗈𝗍 𝖺𝗏𝖺𝗂𝗅𝖺𝖻𝗅𝖾.\nPehle /host karo; privategroup mein sirf admins commands use kar sakte hain.")
         return
     name, arg = match.group(1).lower(), (match.group(2) or "").strip()
     try:
@@ -660,20 +657,20 @@ async def text_router(message: Message):
             if name == "dominant":
                 enabled = arg.lower() not in ("0", "off", "false") if arg else True
                 bridge.set_dominant(enabled)
-                await bot_send(message.reply, "👑 DOMINANT MODE: " + ("ON" if enabled else "OFF"))
+                await bot_send(message.reply, "👑 𝖣𝗈𝗆𝗂𝗇𝖺𝗇𝗍 𝖬𝗈𝖽𝖾: " + ("ON" if enabled else "OFF"))
             else:
                 multiplier = float(arg.split()[0]) if arg else bridge.host_boost
                 actual = bridge.set_host_boost(multiplier)
-                await bot_send(message.reply, "🚀 HOST BOOST: " + str(actual) + "×")
+                await bot_send(message.reply, "🚀 𝖧𝗈𝗌𝗍 𝖡𝗈𝗈𝗌𝗍: " + str(actual) + "×")
             return
         if not arg:
             row = await storage.get_user(owner) or {}
             from audio import DEFAULT_EFFECTS
             value = row.get("effects", {}).get(name, DEFAULT_EFFECTS[name])
-            await bot_send(message.reply, name.upper() + " current: " + str(value) + "\nExample: /" + name + " 10")
+            await bot_send(message.reply, "𝖢𝗎𝗋𝗋𝖾𝗇𝗍 " + name.upper() + ": " + str(value) + "\n\n𝖤𝗑𝖺𝗆𝗉𝗅𝖾: /" + name + " 10")
             return
         value = await manager.set_effect(owner, name, float(arg.split()[0]))
-        await bot_send(message.reply, "✅ " + name.upper() + " set: " + str(value))
+        await bot_send(message.reply, "✅ 𝖠𝗎𝖽𝗂𝗈 " + name.upper() + " 𝗎𝗉𝖽𝖺𝗍𝖾𝖽\nValue: " + str(value))
     except Exception as exc:
         await bot_send(message.reply, "⚠️ " + str(exc))
 
@@ -716,8 +713,7 @@ async def main():
     try:
         await dp.start_polling(bot)
     finally:
-        if mini_app:
-            await mini_app.stop()
+        if mini_app:            await mini_app.stop()
         for uid in list(manager.hosted):
             try:
                 await manager.leave(uid)
