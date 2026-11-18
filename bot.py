@@ -168,7 +168,32 @@ async def host_button(q: CallbackQuery):
 @dp.callback_query(F.data.in_({"help", "eq", "vol", "fx"}))
 async def help_button(q: CallbackQuery):
     pages = {
-                "help": "📚 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒\\n/status — live groups aur all VC settings dekho\\n/host — account host\\n/unhost — session/data delete\\n/privategroup &lt;group_id&gt; — source group set\\n/join &lt;target_id&gt; [source_id] — VC connect\\n/leave — VC disconnect\\n/reset — reset audio effects\\nNew controls: /presence 30, /air 25, /loudmax 90, /stereowide 80, /bitcrush 15, /dominant on, /hostboost 8. Dot versions also work.",
+                "help": (
+                    "<b>Help &amp; Commands</b>\\n"
+                    "Commands available to control your hosted account and voice-chat audio.\\n\\n"
+                    "<b>⌃  System</b>\\n\\n"
+                    "<b>Command</b>                         <b>Description</b>\\n"
+                    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n"
+                    "<code>/host</code> — Start your Telegram account hosting login.\\n"
+                    "<code>/unhost</code> — Disconnect and remove your hosted session.\\n"
+                    "<code>/privategroup</code> — Set the source voice-chat group.\\n"
+                    "<code>/status</code> — Display source, target and audio settings.\\n"
+                    "<code>/join</code> — Connect the voice-chat bridge.\\n"
+                    "<code>/leave</code> — Disconnect from source and target chats.\\n"
+                    "<code>/cancel</code> — Stop an active hosting login process.\\n"
+                    "<code>/reset</code> — Restore all audio effects to defaults.\\n"
+                    "<code>/level</code> — Set the combined master audio profile.\\n"
+                    "<code>/presence</code> — Adjust voice presence.\\n"
+                    "<code>/air</code> — Adjust high-frequency air.\\n"
+                    "<code>/loudmax</code> — Set loudness maximizer amount.\\n"
+                    "<code>/stereowide</code> — Adjust stereo width.\\n"
+                    "<code>/bitcrush</code> — Add digital bit-crush texture.\\n"
+                    "<code>/dominant</code> — Toggle host-dominant audio mode.\\n"
+                    "<code>/hostboost</code> — Adjust host voice boost.\\n"
+                    "<code>.join / .leave</code> — Join or leave using dot commands.\\n"
+                    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n"
+                    "<i>Use the buttons below to go back.</i>"
+                ),
         "eq": "🎚️ 𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑\\n/bass &lt;value&gt; / .bass &lt;value&gt; — low frequencies\\n/treble &lt;value&gt; / .treble &lt;value&gt; — high frequencies\\n/presence 30 / .presence 30 — 2–8 kHz voice cut-through\\n/air 25 / .air 25 — 8+ kHz shimmer/air",
         "vol": "🔊 𝐕𝐎𝐋𝐔𝐌𝐄\\n/db &lt;value&gt; / .db &lt;value&gt; — dB volume\\n/gain &lt;value&gt; / .gain &lt;value&gt; — linear gain\\n/level &lt;number&gt; / .level &lt;number&gt; — master profile\\n/loudmax 90 / .loudmax 90 — loudness maximizer",
         "fx": "✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒\\n/echo &lt;value&gt; / .echo &lt;value&gt; — echo\\n/distortion &lt;value&gt; / .distortion &lt;value&gt; — saturation\\n/stereowide 80 / .stereowide 80 — stereo width\\n/bitcrush 15 / .bitcrush 15 — digital texture\\n/dominant on|off / .dominant on|off — host-dominant mix\\n/hostboost 8 / .hostboost 8 — host voice boost"
