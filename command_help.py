@@ -1,6 +1,6 @@
 """Shared command-help text for slash and dot command help requests."""
 COMMAND_HELP={
-"host":("<phone>","Start your Telegram-account hosting login flow in the bot's private DM.","/host","Only use this with your own Telegram account."),
+"host":("","Start your Telegram-account hosting login flow in the bot's private DM.","/host","Only use this with your own Telegram account; the bot will prompt for your phone number."),
 "unhost":("","Disconnect your hosted account and delete its saved hosted session/settings.","/unhost","This logs out the hosted Telegram authorization."),
 "cancel":("","Stop an active hosting login flow.","/cancel","Use while /host is waiting for login input."),
 "privategroup":("<group_id>","Configure the source voice-chat group.","/privategroup -1001234567890","The bot must be an administrator in that group."),
@@ -26,6 +26,7 @@ COMMAND_HELP={
 def format_command_help(command,prefix="/"):
  key=(command or "").strip().lower().lstrip("/.")
  if key not in COMMAND_HELP:return None
+ if prefix=="." and key not in {"join","leave","reset","level","db","gain","bass","treble","echo","distortion","presence","air","loudmax","stereowide","bitcrush","dominant","hostboost"}:return None
  args,info,example,note=COMMAND_HELP[key]
  usage=prefix+key+((" "+args) if args else "")
  if example.startswith("/"):example=example.replace("/",prefix,1)
