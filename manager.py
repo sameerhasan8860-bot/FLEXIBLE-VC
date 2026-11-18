@@ -5,6 +5,7 @@ from cryptography.fernet import Fernet
 from config import config
 from voice_bridge import VoiceBridge
 from custom_emoji import telethon_entities
+from command_help import format_command_help
 
 log = logging.getLogger("flexible_vc")
 
@@ -303,13 +304,17 @@ class HostedManager:
     async def handle_dot_command(self, owner_id: int, event):
         import re
         match = re.match(
-            r"^\.(join|leave|reset|level|db|gain|bass|treble|echo|distortion"
+            r"^\.(help|join|leave|reset|level|db|gain|bass|treble|echo|distortion"
             r"|presence|air|loudmax|stereowide|bitcrush|dominant|hostboost)(?:\s+(.+))?$",
             event.raw_text.strip(), re.I,
         )
         if not match:
             return
         command, argument = match.group(1).lower(), (match.group(2) or "").strip()
+        if command == "help":
+            help_text = format_command_help(argument.split()[0] if argument else "", ".")
+            await self._reply_custom(event, help_text or "Unknown command. Try .help join or .help bass.", owner_id)
+            return
         row = await self.storage.get_user(owner_id) or {}
         try:
             if command == "join":
