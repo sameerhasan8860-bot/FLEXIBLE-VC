@@ -194,15 +194,53 @@ async def help_button(q: CallbackQuery):
                     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                     "<i>Use the buttons below to go back.</i>"
                 ),
-        "eq": "🎚️ 𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑\\n/bass &lt;value&gt; / .bass &lt;value&gt; — low frequencies\\n/treble &lt;value&gt; / .treble &lt;value&gt; — high frequencies\\n/presence 30 / .presence 30 — 2–8 kHz voice cut-through\\n/air 25 / .air 25 — 8+ kHz shimmer/air",
-        "vol": "🔊 𝐕𝐎𝐋𝐔𝐌𝐄\\n/db &lt;value&gt; / .db &lt;value&gt; — dB volume\\n/gain &lt;value&gt; / .gain &lt;value&gt; — linear gain\\n/level &lt;number&gt; / .level &lt;number&gt; — master profile\\n/loudmax 90 / .loudmax 90 — loudness maximizer",
-        "fx": "✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒\\n/echo &lt;value&gt; / .echo &lt;value&gt; — echo\\n/distortion &lt;value&gt; / .distortion &lt;value&gt; — saturation\\n/stereowide 80 / .stereowide 80 — stereo width\\n/bitcrush 15 / .bitcrush 15 — digital texture\\n/dominant on|off / .dominant on|off — host-dominant mix\\n/hostboost 8 / .hostboost 8 — host voice boost"
+        "eq": (
+            "<b>Equalizer Commands</b>\n"
+            "Commands to shape the tone and clarity of your voice-chat audio.\n\n"
+            "<b>Equalizer</b>\n\n"
+            "<b>Command</b>                         <b>Description</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "<code>/bass</code>                  Adjust low-frequency bass.\n"
+            "<code>/treble</code>               Adjust high-frequency treble.\n"
+            "<code>/presence</code>           Improve voice presence and cut-through in the 2–8 kHz range.\n"
+            "<code>/air</code>                     Add shimmer and air to frequencies above 8 kHz.\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "<i>Use the buttons below to go back.</i>"
+        ),
+        "vol": (
+            "<b>Volume Commands</b>\n"
+            "Commands to control the output level and loudness of your voice-chat audio.\n\n"
+            "<b>Volume</b>\n\n"
+            "<b>Command</b>                         <b>Description</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "<code>/db</code>                      Set output volume in decibels.\n"
+            "<code>/gain</code>                   Adjust linear audio gain.\n"
+            "<code>/level</code>                  Set the combined master audio profile.\n"
+            "<code>/loudmax</code>             Control the loudness maximizer.\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "<i>Use the buttons below to go back.</i>"
+        ),
+        "fx": (
+            "<b>Audio Effects Commands</b>\n"
+            "Commands to add effects and customize your relayed voice-chat audio.\n\n"
+            "<b>Audio Effects</b>\n\n"
+            "<b>Command</b>                         <b>Description</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "<code>/echo</code>                   Add an echo effect.\n"
+            "<code>/distortion</code>          Add saturation and distortion.\n"
+            "<code>/stereowide</code>        Adjust stereo width.\n"
+            "<code>/bitcrush</code>             Add a digital bit-crush texture.\n"
+            "<code>/dominant</code>           Toggle host-dominant audio mode.\n"
+            "<code>/hostboost</code>          Adjust the host voice boost.\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "<i>Use the buttons below to go back.</i>"
+        )
     }
     await bot_send(
         q.message.edit_text,
         pages[q.data],
         reply_markup=category_keyboard(q.data),
-        **({"parse_mode": "HTML"} if q.data == "help" else {}),
+        parse_mode="HTML",
     )
     await q.answer()
 
