@@ -2,6 +2,7 @@ import asyncio
 import logging
 import re
 import html
+import textwrap
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
@@ -121,19 +122,39 @@ async def command_detail_button(q: CallbackQuery):
         return
     title, syntax, purpose, example = detail
     category = "help" if key in ("host", "unhost", "cancel", "reset", "privategroup", "status", "join", "leave", "dotjoin", "dotleave", "level") else ("eq" if key in ("bass", "treble", "presence", "air") else ("vol" if key in ("db", "gain", "loudmax") else "fx"))
+    command_cell = syntax
+    description = f"{purpose} Usage: {syntax}. Example: {example}"
+    command_width = 23
+    description_width = 35
+
+    def table_row(left, right):
+        left_lines = textwrap.wrap(left, width=command_width) or [""]
+        right_lines = textwrap.wrap(right, width=description_width) or [""]
+        height = max(len(left_lines), len(right_lines))
+        rendered = []
+        for index in range(height):
+            left_part = left_lines[index] if index < len(left_lines) else ""
+            right_part = right_lines[index] if index < len(right_lines) else ""
+            rendered.append(f"│ {left_part:<{command_width}} │ {right_part:<{description_width}} │")
+        return rendered
+
+    border = "┌" + "─" * 25 + "┬" + "─" * 37 + "┐"
+    middle = "├" + "─" * 25 + "┼" + "─" * 37 + "┤"
+    bottom = "└" + "─" * 25 + "┴" + "─" * 37 + "┘"
+    table_lines = [
+        border,
+        *table_row("Command", "Description"),
+        middle,
+        *table_row(command_cell, description),
+        bottom,
+    ]
+    section = "System" if category == "help" else ("Equalizer" if category == "eq" else ("Volume" if category == "vol" else "Audio Effects"))
     text = (
-        "╭━━〔 📖 𝐂𝐎𝐌𝐌𝐀𝐍𝐃 𝐆𝐔𝐈𝐃𝐄 〕━━╮\\n"
-        f"       {title}\\n"
-        "╰━━━━━━━━━━━━━━━━━━╯\\n\\n"
-        "╭─〔 ⚙️ 𝐂𝐎𝐌𝐌𝐀𝐍𝐃 〕\\n"
-        f"├ 𝐍𝐚𝐦𝐞: <code>{html.escape(syntax.split()[0])}</code>\\n"
-        f"╰ 𝐔𝐬𝐚𝐠𝐞: <code>{html.escape(syntax)}</code>\\n\\n"
-        "╭─〔 📝 𝐃𝐄𝐒𝐂𝐑𝐈𝐏𝐓𝐈𝐎𝐍 〕\\n"
-        f"{html.escape(purpose)}\\n\\n"
-        "╭─〔 💡 𝐄𝐗𝐀𝐌𝐏𝐋𝐄 〕\\n"
-        f"<code>{html.escape(example)}</code>\\n"
-        "╰━━━━━━━━━━━━━━━━━━╯\\n\\n"
-        "<i>Use the buttons below to explore more commands.</i>"
+        f"<b>{html.escape(section)} Commands</b>\\n"
+        "Command details and instructions for using this feature.\\n\\n"
+        f"<b>⌃  {html.escape(section)}</b>\\n"
+        f"<pre>{html.escape(chr(10).join(table_lines))}</pre>\\n"
+        "<i>Use the buttons below to go back.</i>"
     )
     await bot_send(q.message.edit_text, text, reply_markup=category_keyboard(category), parse_mode="HTML")
     await q.answer()
