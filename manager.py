@@ -323,15 +323,15 @@ class HostedManager:
                 else:
                     target_id = int(event.chat_id)
                     if target_id > 0:
-                        raise RuntimeError("DM/Saved Messages mein .join <target_group_id> use karo.")
+                        raise RuntimeError("𝖴𝗌𝖺𝗀𝖾\n.join <target_group_id>\n\n𝖭𝗈𝗍𝖾\nDM ya Saved Messages mein target group ID dena zaroori hai.")
                 source_id = row.get("private_group_id") or row.get("source_group_id")
                 if not source_id:
-                    raise RuntimeError("Pehle bot DM mein /privategroup <source_group_id> ya /join <target_id> <source_id> set karo.")
+                    raise RuntimeError("𝖲𝗈𝗎𝗋𝖼𝖾 𝗀𝗋𝗈𝗎𝗉 𝗌𝖾𝗍 𝗇𝖺𝗁𝗂 𝗁𝖺𝗂.\n\nBot DM mein /privategroup <source_group_id> set karo, ya /join <target_id> <source_id> use karo.")
                 await self.start_bridge(owner_id, int(source_id), target_id)
-                await self._reply_custom(event, f"🔊 𝐕𝐂 𝐁𝐑𝐈𝐃𝐆𝐄 𝐀𝐂𝐓𝐈𝐕𝐄\nSource: {source_id}\nTarget: {target_id}", owner_id)
+                await self._reply_custom(event, f"🔊 𝖵𝖢 𝖡𝗋𝗂𝖽𝗀𝖾 𝖢𝗈𝗇𝗇𝖾𝖼𝗍𝖾𝖽\n\n𝖲𝗈𝗎𝗋𝖼𝖾: {source_id}\n𝖳𝖺𝗋𝗀𝖾𝗍: {target_id}", owner_id)
             elif command == "leave":
                 await self.leave(owner_id)
-                await self._reply_custom(event, "🛑 𝐒𝐎𝐔𝐑𝐂𝐄 & 𝐓𝐀𝐑𝐆𝐄𝐓 VC se disconnect ho gaya.", owner_id)
+                await self._reply_custom(event, "🛑 𝖵𝖢 𝖡𝗋𝗂𝖽𝗀𝖾 𝖣𝗂𝗌𝖼𝗈𝗇𝗇𝖾𝖼𝗍𝖾𝖽\nSource aur target dono voice chats se leave ho gaya.", owner_id)
             elif command == "reset":
                 await self.reset_effects(owner_id)
                 await self._reply_custom(event, "♻️ 𝐀𝐋𝐋 𝐄𝐅𝐅𝐄𝐂𝐓𝐒 𝐑𝐄𝐒𝐄𝐓\nAll audio controls original defaults par aa gaye.", owner_id)
@@ -341,22 +341,22 @@ class HostedManager:
                     raise RuntimeError("Bridge not active.")
                 enabled = argument.lower() not in ("0", "off", "false") if argument else True
                 bridge.set_dominant(enabled)
-                await self._reply_custom(event, f"👑 𝐃𝐎𝐌𝐈𝐍𝐀𝐍𝐓 𝐌𝐎𝐃𝐄: {'ON' if enabled else 'OFF'}\nAapki awaaz target VC pe sabse upar rahegi.", owner_id)
+                await self._reply_custom(event, f"👑 𝖣𝗈𝗆𝗂𝗇𝖺𝗇𝗍 𝖬𝗈𝖽𝖾: {'ON' if enabled else 'OFF'}\nAapki awaaz target VC par sabse upar rahegi.", owner_id)
             elif command == "hostboost":
                 bridge = self.hosted.get(owner_id, {}).get("bridge")
                 if not bridge:
                     raise RuntimeError("Bridge not active.")
                 multiplier = float(argument.split()[0]) if argument else bridge.host_boost
                 actual = bridge.set_host_boost(multiplier)
-                await self._reply_custom(event, f"🚀 𝐇𝐎𝐒𝐓 𝐁𝐎𝐎𝐒𝐓: {actual:g}× (+{20*__import__('math').log10(actual):.1f} dB over others)", owner_id)
+                await self._reply_custom(event, f"🚀 𝖧𝗈𝗌𝗍 𝖡𝗈𝗈𝗌𝗍: {actual:g}×\nOther speakers ke comparison mein boost.", owner_id)
             else:
                 if not argument:
                     from audio import DEFAULT_EFFECTS
                     current = row.get("effects", {}).get(command, DEFAULT_EFFECTS.get(command, 0))
-                    await self._reply_custom(event, f"🎚️ 𝐂𝐮𝐫𝐫𝐞𝐧𝐭 {command.upper()}: {current}\nExample: .{command} 10", owner_id)
+                    await self._reply_custom(event, f"🎚️ 𝖢𝗎𝗋𝗋𝖾𝗇𝗍 {command.upper()}: {current}\n\n𝖤𝗑𝖺𝗆𝗉𝗅𝖾: .{command} 10", owner_id)
                     return
                 value = float(argument.split()[0])
                 actual = await self.set_effect(owner_id, command, value)
-                await self._reply_custom(event, f"✅ 𝐀𝐮𝐝𝐢𝐨 {command.upper()} set: {actual:g}", owner_id)
+                await self._reply_custom(event, f"✅ 𝖠𝗎𝖽𝗂𝗈 {command.upper()} 𝗎𝗉𝖽𝖺𝗍𝖾𝖽\nValue: {actual:g}", owner_id)
         except Exception as exc:
-            await self._reply_custom(event, f"⚠️ {str(exc)}", owner_id)
+            await self._reply_custom(event, f"⚠️ 𝖤𝗋𝗋𝗈𝗋\n\n{str(exc)}", owner_id)
