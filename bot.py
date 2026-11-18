@@ -13,6 +13,7 @@ from config import config, validate_config
 from storage import Storage
 from custom_emoji import bot_send
 from manager import HostedManager
+from command_help import format_command_help
 from webapp.server import MiniAppServer
 
 validate_config()
@@ -631,6 +632,17 @@ async def text_router(message: Message):
             # phone, OTP, or 2FA input values.
             await bot_send(bot.send_message, uid, "⚠️ 𝐋𝐎𝐆𝐈𝐍 𝐄𝐑𝐑𝐎𝐑\nThodi der baad retry karo ya /cancel use karo.")
         return
+    help_match = re.fullmatch(r"/help\\s+([a-z_]+)", message.text.strip(), re.I)
+    if help_match:
+        help_text = format_command_help(help_match.group(1), "/")
+        await bot_send(message.reply, help_text or "Unknown command. Try /help join or /help bass.")
+        return
+    direct_help = re.fullmatch(r"/([a-z_]+)\\s+help", message.text.strip(), re.I)
+    if direct_help:
+        help_text = format_command_help(direct_help.group(1), "/")
+        if help_text:
+            await bot_send(message.reply, help_text)
+            return
     match = re.match(r"^/(reset|level|db|gain|bass|treble|echo|distortion|presence|air|loudmax|stereowide|bitcrush|dominant|hostboost)(?:\s+(.+))?$", message.text.strip(), re.I)
     if not match:
         return
