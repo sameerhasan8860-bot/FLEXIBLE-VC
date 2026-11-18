@@ -81,7 +81,10 @@ def category_keyboard(category):
         ],
     }
     rows = [[InlineKeyboardButton(text=label, callback_data=data, style=style, icon_custom_emoji_id=emoji_id)] for label, data, style, emoji_id in commands.get(category, [])]
-    rows.append([InlineKeyboardButton(text="𝐇𝐎𝐌𝐄", callback_data="home", style="primary", icon_custom_emoji_id="5411077907223180693")])
+    rows.extend([
+        [InlineKeyboardButton(text="📚 𝐀𝐋𝐋 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒", callback_data="all_commands", style="success")],
+        [InlineKeyboardButton(text="⌂ 𝐇𝐎𝐌𝐄", callback_data="home", style="primary", icon_custom_emoji_id="5411077907223180693")],
+    ])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 COMMAND_DETAILS = {
@@ -120,9 +123,27 @@ async def command_detail_button(q: CallbackQuery):
         await q.answer("Command detail not found", show_alert=True)
         return
     title, syntax, purpose, example = detail
-    text = title + "\n\n<b>Syntax:</b> <code>" + html.escape(syntax) + "</code>\n\n<b>Use:</b> " + html.escape(purpose) + "\n\n<b>Example:</b> <code>" + html.escape(example) + "</code>"
     category = "help" if key in ("host", "unhost", "cancel", "reset", "privategroup", "status", "join", "leave", "dotjoin", "dotleave", "level") else ("eq" if key in ("bass", "treble", "presence", "air") else ("vol" if key in ("db", "gain", "loudmax") else "fx"))
-    await bot_send(q.message.edit_text, text, reply_markup=category_keyboard(category), parse_mode="HTML")
+    text = (
+        "╭━━〔 📖 𝐂𝐎𝐌𝐌𝐀𝐍𝐃 𝐆𝐔𝐈𝐃𝐄 〕━━╮\\n"
+        f"       {title}\\n"
+        "╰━━━━━━━━━━━━━━━━━━╯\\n\\n"
+        "╭─〔 ⚙️ 𝐂𝐎𝐌𝐌𝐀𝐍𝐃 〕\\n"
+        f"├ 𝐍𝐚𝐦𝐞: <code>{html.escape(syntax.split()[0])}</code>\\n"
+        f"╰ 𝐔𝐬𝐚𝐠𝐞: <code>{html.escape(syntax)}</code>\\n\\n"
+        "╭─〔 📝 𝐃𝐄𝐒𝐂𝐑𝐈𝐏𝐓𝐈𝐎𝐍 〕\\n"
+        f"{html.escape(purpose)}\\n\\n"
+        "╭─〔 💡 𝐄𝐗𝐀𝐌𝐏𝐋𝐄 〕\\n"
+        f"<code>{html.escape(example)}</code>\\n"
+        "╰━━━━━━━━━━━━━━━━━━╯\\n\\n"
+        "<i>Use the buttons below to explore more commands.</i>"
+    )
+    detail_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📚 𝐀𝐋𝐋 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒", callback_data="all_commands", style="success")],
+        [InlineKeyboardButton(text="↩ 𝐁𝐀𝐂𝐊 𝐓𝐎 𝐂𝐀𝐓𝐄𝐆𝐎𝐑𝐘", callback_data=f"page:{category}", style="primary")],
+        [InlineKeyboardButton(text="⌂ 𝐇𝐎𝐌𝐄", callback_data="home", style="primary")],
+    ])
+    await bot_send(q.message.edit_text, text, reply_markup=detail_keyboard, parse_mode="HTML")
     await q.answer()
 
 HOME_TEXT = "╭━━〔 ✨ 𝐅𝐋𝐄𝐗𝐈𝐁𝐋𝐄 𝐕𝐂 〕━━╮\n  𝐋𝐢𝐯𝐞 𝐕𝐨𝐢𝐜𝐞 𝐂𝐡𝐚𝐭 𝐁𝐫𝐢𝐝𝐠𝐞\n╰━━━━━━━━━━━━━━━━━━╯\n\n🎧 Source VC ki mixed live audio target VC mein relay karo.\n\n👇 Start karne ke liye option select karo."
@@ -147,16 +168,76 @@ async def host_button(q: CallbackQuery):
     await q.answer()
     await begin_host(q.from_user.id, q.message)
 
+@dp.callback_query(F.data == "all_commands")
+async def all_commands_button(q: CallbackQuery):
+    rows = []
+    for key, (title, syntax, purpose, example) in COMMAND_DETAILS.items():
+        label = syntax.split()[0]
+        rows.append(InlineKeyboardButton(text=label, callback_data=f"cmd:{key}", style="primary"))
+    keyboard_rows = [rows[i:i + 2] for i in range(0, len(rows), 2)]
+    keyboard_rows.extend([
+        [InlineKeyboardButton(text="🎚️ 𝐄𝐐 𝐂𝐎𝐍𝐓𝐑𝐎𝐋𝐒", callback_data="eq", style="primary"),
+         InlineKeyboardButton(text="🔊 𝐕𝐎𝐋𝐔𝐌𝐄", callback_data="vol", style="success")],
+        [InlineKeyboardButton(text="✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒", callback_data="fx", style="danger"),
+         InlineKeyboardButton(text="⌂ 𝐇𝐎𝐌𝐄", callback_data="home", style="primary")],
+    ])
+    keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_rows)
+    text = (
+        "╭━━〔 📚 𝐀𝐋𝐋 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒 〕━━╮\\n"
+        "       𝐅𝐋𝐄𝐗𝐈𝐁𝐋𝐄 𝐕𝐂 𝐆𝐔𝐈𝐃𝐄\\n"
+        "╰━━━━━━━━━━━━━━━━━━╯\\n\\n"
+        "<b>Choose any command below</b> to view its usage, description and example.\\n\\n"
+        "╭─〔 🎛️ 𝐀𝐔𝐃𝐈𝐎 𝐂𝐎𝐍𝐓𝐑𝐎𝐋𝐒 〕\\n"
+        "Volume • Equalizer • Effects • Host controls\\n"
+        "╰━━━━━━━━━━━━━━━━━━╯\\n\\n"
+        "<i>Tap a command button to open its detailed guide.</i>"
+    )
+    await bot_send(q.message.edit_text, text, reply_markup=keyboard, parse_mode="HTML")
+    await q.answer()
+
+
+@dp.callback_query(F.data.startswith("page:"))
+async def category_page_button(q: CallbackQuery):
+    category = q.data.split(":", 1)[1]
+    await show_command_page(q, category)
+
+
+async def show_command_page(q: CallbackQuery, category: str):
+    pages = {
+        "help": (
+            "╭━━〔 📚 𝐇𝐄𝐋𝐏 & 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒 〕━━╮\\n"
+            "       𝐁𝐎𝐓 𝐔𝐒𝐄𝐑 𝐆𝐔𝐈𝐃𝐄\\n"
+            "╰━━━━━━━━━━━━━━━━━━╯\\n\\n"
+            "Manage hosted accounts, configure source/target voice chats and control live audio.\\n\\n"
+            "<b>Tap All Commands</b> to browse every command, then select any command for its complete guide.\\n\\n"
+            "<i>Use the buttons below to continue.</i>"
+        ),
+        "eq": (
+            "╭━━〔 🎚️ 𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑 〕━━╮\\n"
+            "Adjust bass, treble, presence and air bands.\\n"
+            "╰━━━━━━━━━━━━━━━━━━╯\\n\\n"
+            "<i>Select a command below to view its guide.</i>"
+        ),
+        "vol": (
+            "╭━━〔 🔊 𝐕𝐎𝐋𝐔𝐌𝐄 𝐂𝐎𝐍𝐓𝐑𝐎𝐋𝐒 〕━━╮\\n"
+            "Control output level, decibels and loudness.\\n"
+            "╰━━━━━━━━━━━━━━━━━━╯\\n\\n"
+            "<i>Select a command below to view its guide.</i>"
+        ),
+        "fx": (
+            "╭━━〔 ✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒 〕━━╮\\n"
+            "Shape your relayed audio with real-time effects.\\n"
+            "╰━━━━━━━━━━━━━━━━━━╯\\n\\n"
+            "<i>Select a command below to view its guide.</i>"
+        ),
+    }
+    await bot_send(q.message.edit_text, pages[category], reply_markup=category_keyboard(category), parse_mode="HTML")
+    await q.answer()
+
+
 @dp.callback_query(F.data.in_({"help", "eq", "vol", "fx"}))
 async def help_button(q: CallbackQuery):
-    pages = {
-                "help": "📚 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒\n/status — live groups aur all VC settings dekho\n/host — account host\n/unhost — session/data delete\n/privategroup &lt;group_id&gt; — source group set\n/join &lt;target_id&gt; [source_id] — VC connect\n/leave — VC disconnect\n/reset — reset audio effects\nNew controls: /presence 30, /air 25, /loudmax 90, /stereowide 80, /bitcrush 15, /dominant on, /hostboost 8. Dot versions also work.",
-        "eq": "🎚️ 𝐄𝐐𝐔𝐀𝐋𝐈𝐙𝐄𝐑\n/bass &lt;value&gt; / .bass &lt;value&gt; — low frequencies\n/treble &lt;value&gt; / .treble &lt;value&gt; — high frequencies\n/presence 30 / .presence 30 — 2–8 kHz voice cut-through\n/air 25 / .air 25 — 8+ kHz shimmer/air",
-        "vol": "🔊 𝐕𝐎𝐋𝐔𝐌𝐄\n/db &lt;value&gt; / .db &lt;value&gt; — dB volume\n/gain &lt;value&gt; / .gain &lt;value&gt; — linear gain\n/level &lt;number&gt; / .level &lt;number&gt; — master profile\n/loudmax 90 / .loudmax 90 — loudness maximizer",
-        "fx": "✨ 𝐀𝐔𝐃𝐈𝐎 𝐄𝐅𝐅𝐄𝐂𝐓𝐒\n/echo &lt;value&gt; / .echo &lt;value&gt; — echo\n/distortion &lt;value&gt; / .distortion &lt;value&gt; — saturation\n/stereowide 80 / .stereowide 80 — stereo width\n/bitcrush 15 / .bitcrush 15 — digital texture\n/dominant on|off / .dominant on|off — host-dominant mix\n/hostboost 8 / .hostboost 8 — host voice boost"
-    }
-    await bot_send(q.message.edit_text, pages[q.data], reply_markup=category_keyboard(q.data))
-    await q.answer()
+    await show_command_page(q, q.data)
 
 async def begin_host(uid, message):
     if await storage.get_user(uid):
